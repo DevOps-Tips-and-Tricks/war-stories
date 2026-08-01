@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/DevOps-Tips-and-Tricks/war-stories/schema/war-story.schema.json",
+  "title": "War story front matter",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "stack",
+    "severity",
+    "detection",
+    "time_to_detect",
+    "time_to_resolve",
+    "root_cause_category",
+    "blast_radius",
+    "contributed_by"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9]{4}$",
+      "description": "Zero-padded, unique, never reused."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 80,
+      "description": "Symptom-first, sentence case, no trailing period."
+    },
+    "stack": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9.-]*$"
+      }
+    },
+    "severity": {
+      "enum": ["sev1", "sev2", "sev3", "sev4"]
+    },
+    "detection": {
+      "enum": ["alerting", "customer", "manual", "chance"],
+      "description": "How the incident was noticed. 'chance' means nobody was looking."
+    },
+    "time_to_detect": {
+      "type": "string",
+      "pattern": "^([0-9]+d)?([0-9]+h)?([0-9]+m)?$",
+      "description": "Compound duration, e.g. 4m, 2h30m, 1d4h."
+    },
+    "time_to_resolve": {
+      "type": "string",
+      "pattern": "^([0-9]+d)?([0-9]+h)?([0-9]+m)?$"
+    },
+    "root_cause_category": {
+      "enum": ["configuration", "capacity", "code", "dependency", "process"]
+    },
+    "blast_radius": {
+      "enum": [
+        "single-service",
+        "namespace",
+        "cluster",
+        "multi-cluster",
+        "region",
+        "global"
+      ]
+    },
+    "contributed_by": {
+      "type": "string",
+      "pattern": "^@[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$"
+    },
+    "video": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}$",
+      "description": "Year and month only. Deliberately imprecise for anonymity."
+    }
+  }
+}
