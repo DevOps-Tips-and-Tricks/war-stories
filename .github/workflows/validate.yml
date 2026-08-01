@@ -1,0 +1,54 @@
+name: validate
+
+on:
+  pull_request:
+    paths:
+      - "stories/**"
+      - "schema/**"
+      - "scripts/**"
+      - "README.md"
+      - ".github/workflows/validate.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  schema:
+    name: Front matter and structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Validate entries
+        run: python scripts/validate.py
+
+      - name: Check index is current
+        run: python scripts/build_index.py --check
+
+  links:
+    name: Link check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for dead links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --no-progress --accept 200,206,429 'stories/**/*.md' 'README.md'
+          fail: true
