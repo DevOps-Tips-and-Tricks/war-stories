@@ -11,3 +11,6 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+
+# Local video production notes and demo labs — never published
+video-scripts/
