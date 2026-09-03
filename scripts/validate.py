@@ -4,7 +4,9 @@
 Checks, in order:
   1. Front matter exists and is parseable YAML.
   2. Front matter validates against schema/war-story.schema.json.
-  3. All required H2 sections are present, in order, and non-empty.
+  3. All required H2 sections are present, in order, and non-empty. Entries
+     open with the general problem and a runnable reproduction before the
+     incident narrative starts.
   4. The filename matches the id and the slugified title.
   5. Ids are unique across the corpus.
   6. No routable IP addresses leaked into the prose.
@@ -31,6 +33,8 @@ STORIES_DIR = ROOT / "stories"
 SCHEMA_PATH = ROOT / "schema" / "war-story.schema.json"
 
 REQUIRED_SECTIONS = [
+    "The general problem",
+    "Reproduce it",
     "Symptom",
     "Timeline",
     "What we thought it was",

@@ -42,8 +42,8 @@ def load_entries() -> list[dict]:
 
 def render_table(entries: list[dict]) -> str:
     rows = [
-        "| # | Incident | Stack | Sev | Root cause | Time to resolve | By |",
-        "|---|---|---|---|---|---|---|",
+        "| # | Incident | General problem | Stack | Sev | Root cause | Time to resolve | By |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     ordered = sorted(entries, key=lambda e: str(e.get("id", "")))
     for entry in ordered:
@@ -51,10 +51,11 @@ def render_table(entries: list[dict]) -> str:
         handle = str(entry.get("contributed_by", "")).lstrip("@")
         by = f"[@{handle}](https://github.com/{handle})" if handle else ""
         rows.append(
-            "| {id} | [{title}]({path}) | {stack} | {sev} | {cause} | {ttr} | {by} |".format(
+            "| {id} | [{title}]({path}) | {concept} | {stack} | {sev} | {cause} | {ttr} | {by} |".format(
                 id=entry.get("id", ""),
                 title=entry.get("title", ""),
                 path=entry["_path"],
+                concept=entry.get("concept", ""),
                 stack=stack,
                 sev=str(entry.get("severity", "")).upper(),
                 cause=entry.get("root_cause_category", ""),

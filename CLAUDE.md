@@ -19,7 +19,15 @@ Two consequences follow from that, and they drive most of the rules below:
    someone who was not in the incident. Prose that only makes sense to the
    person who lived it has failed even if it is accurate.
 
-The defining constraint of the project is the required **What we thought it
+Entries are built in two halves, and the order is not negotiable. An entry opens
+with **the general problem** — the mechanism as a class of failure, with no
+company, cluster or date in it — followed by **a reproduction** small enough to
+run on one machine in minutes. Only then does the incident narrative start. The
+general problem is what makes an entry useful to somebody on a different stack;
+the incident is what makes it true, and neither half works alone. A mechanism
+with no incident is a blog post; an incident with no mechanism is gossip.
+
+The second defining constraint is the required **What we thought it
 was** section. Most postmortem collections publish only the answer. This one
 publishes the wrong turns, because the transferable skill is chasing fewer bad
 hypotheses, not memorising more root causes. An entry without a real, specific
@@ -71,6 +79,11 @@ Pick the next unused id. Ids are never reused, even if an entry is deleted.
   title, rename the file** — this is the most common validation failure.
 - `title` is 10–80 characters, sentence case, symptom-first, no trailing period.
   "etcd quorum lost during rolling upgrade", not "Fixing our etcd inventory bug".
+- `concept` is 10–80 characters and states the general problem *without the
+  incident*: "a deleted file with an open descriptor still owns its blocks", not
+  "our Mongo pod crashlooped". It is the queryable form of the first section,
+  and the index renders it beside the title. If it cannot be written without
+  naming the stack, the entry is probably still a bug report.
 - `stack` is 1–6 lowercase tags matching `^[a-z0-9][a-z0-9.-]*$`.
 - `time_to_detect` / `time_to_resolve` are compound durations: `4m`, `2h30m`,
   `1d4h`. Not `90 minutes`, not `1.5h`.
@@ -82,9 +95,11 @@ Pick the next unused id. Ids are never reused, even if an entry is deleted.
 
 ### Section rules
 
-The seven H2 sections must all be present, non-empty, and **in this order**:
+The nine H2 sections must all be present, non-empty, and **in this order**:
 
 ```
+## The general problem
+## Reproduce it
 ## Symptom
 ## Timeline
 ## What we thought it was
@@ -97,7 +112,7 @@ The seven H2 sections must all be present, non-empty, and **in this order**:
 Headings must match those strings exactly — the validator compares literals, so
 a reworded or re-cased heading reads as a missing section. Each section needs
 more than 40 characters of body or it is rejected as a stub. Additional H2s
-beyond the seven are allowed but are unusual; prefer folding the material into
+beyond the nine are allowed but are unusual; prefer folding the material into
 an existing section.
 
 ## Editorial standards
@@ -105,11 +120,26 @@ an existing section.
 These are what separates a merged entry from a rejected one. Apply them when
 drafting, and enforce them when reviewing.
 
+**The general problem must be portable.** Write it so a reader who has never
+touched the stack can recognise the same shape in theirs. Name the two things
+being confused, or the assumption the system quietly breaks. "Disk filled up" is
+a category; "`df` reads an allocator, `du` walks a namespace" is a mechanism.
+Nothing about the incident belongs in this section — not the component, not the
+severity, not the night.
+
+**The reproduction must run.** Minimal, no proprietary parts, commands in the
+order they are typed, and it must end with the divergence visible on screen.
+State what a healthy run looks like, so a reader can tell the difference, and
+include the teardown. Anything that cannot be reproduced honestly gets said
+plainly ("this needs three nodes") rather than faked — a repro that does not
+work is worse than none, because the reader debugs your lab instead of learning
+the mechanism.
+
 **Symptom before cause.** Write each section from the epistemic position of the
 people in the incident at that moment. The Symptom section must not contain the
 answer, or even hint at it. Reveal in order.
 
-**Say what was still working.** In the reference entry (`stories/0001-…`), "the
+**Say what was still working.** In the etcd entry (`stories/0003-…`), "the
 workloads stayed up" is the single most diagnostic fact, and it is what
 should have redirected the responders in two minutes. Negative space narrows the
 search faster than symptoms do. Ask for it explicitly if a draft omits it.
@@ -133,8 +163,10 @@ runbook step. "Better monitoring" and "more testing" are non-answers and should
 be pushed back on.
 
 **The lesson must survive a change of stack.** If it only applies to one tool at
-one version, it is a bug report. The generalizable lesson is what the video is
-actually about.
+one version, it is a bug report. It should read as a stronger version of the
+general problem, earned by the incident — the opening section states the
+mechanism, the closing one states what the mechanism costs and what habit
+follows from it.
 
 **Severity is not the bar.** A 20-minute sev3 with a non-obvious cause is a
 better entry — and a better episode — than a six-hour sev1 with a boring one.
@@ -177,10 +209,13 @@ Check in this order and report failures with file:line:
 
 1. `python scripts/validate.py` and `python scripts/build_index.py --check`.
 2. Anonymisation sweep — the part CI cannot do.
-3. Is "What we thought it was" real? A single sentence, or hypotheses invented
+3. Does the general problem stand without the incident, and does the
+   reproduction actually run? Run it. A repro that has never been executed is
+   the second most common failure after a thin "What we thought it was".
+4. Is "What we thought it was" real? A single sentence, or hypotheses invented
    after the fact to satisfy the section, is the failure mode to watch for.
-4. Is anything in it surprising, and does the lesson survive a change of stack?
-5. Does the Symptom section leak the answer?
+5. Is anything in it surprising, and does the lesson survive a change of stack?
+6. Does the Symptom section leak the answer?
 
 ## Working conventions
 
