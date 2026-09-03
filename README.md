@@ -1,7 +1,15 @@
 # war-stories
 
-Anonymised production incidents in a fixed schema — including the hypotheses
-that turned out to be wrong.
+Anonymised production incidents in a fixed schema — each one starting from the
+general problem underneath it, and including the hypotheses that turned out to
+be wrong.
+
+Every entry is in two halves. It opens with the mechanism as a class of failure
+and a lab you can run in five minutes to see it happen on your own machine —
+`df` and `du` disagreeing, a config that is only read at startup — and only then
+tells the production incident where that mechanism cost somebody a night. The
+general problem is what makes the entry useful to a reader on a different stack;
+the incident is what makes it true.
 
 Postmortem collections usually publish the answer. That is the least useful
 part. What separates a senior engineer from a competent mid-level one is not
@@ -16,11 +24,12 @@ Part of [DevOps Tips and Tricks](https://www.youtube.com/@DevOpsTipsAndTricks).
 
 <!-- INDEX:START -->
 
-| # | Incident | Stack | Sev | Root cause | Time to resolve | By |
-|---|---|---|---|---|---|---|
-| 0001 | [etcd quorum lost during rolling upgrade](stories/0001-etcd-quorum-lost-during-rolling-upgrade.md) | `kubernetes`, `etcd`, `kubespray` | SEV1 | configuration | 1h35m | [@maintainer](https://github.com/maintainer) |
+| # | Incident | General problem | Stack | Sev | Root cause | Time to resolve | By |
+|---|---|---|---|---|---|---|---|
+| 0001 | [df said the disk was full, du said it was half empty](stories/0001-df-said-the-disk-was-full-du-said-it-was-half-empty.md) | A deleted file with an open descriptor still owns its blocks | `linux`, `kubernetes`, `mongodb`, `logrotate` | SEV2 | capacity | 2h | [@maintainer](https://github.com/maintainer) |
+| 0003 | [etcd quorum lost during rolling upgrade](stories/0003-etcd-quorum-lost-during-rolling-upgrade.md) | Config read only at startup fails at the next restart, not when it changes | `kubernetes`, `etcd`, `kubespray` | SEV1 | configuration | 1h35m | [@maintainer](https://github.com/maintainer) |
 
-_1 entries: **1** configuration._
+_2 entries: **1** capacity, **1** configuration._
 
 <!-- INDEX:END -->
 
@@ -55,6 +64,13 @@ The `date` field is deliberately month-precision only, for the same reason.
 
 ## What makes a good entry
 
+- **The general problem stands on its own.** Someone who has never seen your
+  stack should be able to read the first section and recognise the shape of the
+  bug in theirs. "Disk filled up" is a category; "`df` and `du` measure
+  different things" is a mechanism.
+- **The reproduction actually runs.** Minimal, no proprietary parts, and it ends
+  with the two tools disagreeing on screen. If it cannot be reproduced on one
+  machine in a few minutes, say what the smallest honest version is.
 - **The symptom is described before the cause.** Write it the way you
   experienced it, not the way you understand it now.
 - **Something in it is surprising.** A full disk is not an entry. A full disk
@@ -71,10 +87,17 @@ Front matter is validated against
 request, along with section presence, section order, filename format, id
 uniqueness, and leaked addresses.
 
+The nine H2 sections must all be present, non-empty, and in this order:
+`## The general problem`, `## Reproduce it`, `## Symptom`, `## Timeline`,
+`## What we thought it was`, `## Actual root cause`, `## Fix`,
+`## What would have prevented it`, `## Generalizable lesson`. The validator
+compares the headings literally, so a reworded one reads as a missing section.
+
 | Field | Notes |
 |---|---|
 | `id` | Quoted, zero-padded, four digits. Never reused |
 | `title` | Symptom-first, sentence case, 10–80 characters |
+| `concept` | The general problem, stated without the incident. 10–80 characters |
 | `stack` | 1–6 lowercase tags |
 | `severity` | `sev1`–`sev4` |
 | `detection` | `alerting`, `customer`, `manual`, `chance` |
@@ -87,8 +110,9 @@ uniqueness, and leaked addresses.
 
 The categorisation exists so the corpus can be queried once it is large enough
 to be interesting — "show me every configuration failure that took over an hour
-to detect" is a better source of video topics, and of your own team's
-priorities, than a folder of prose.
+to detect", or "every entry whose general problem is a caching assumption" — is
+a better source of video topics, and of your own team's priorities, than a
+folder of prose.
 
 ## Licence
 
