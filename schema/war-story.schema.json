@@ -7,6 +7,7 @@
   "required": [
     "id",
     "title",
+    "concept",
     "stack",
     "severity",
     "detection",
@@ -27,6 +28,12 @@
       "minLength": 10,
       "maxLength": 80,
       "description": "Symptom-first, sentence case, no trailing period."
+    },
+    "concept": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 80,
+      "description": "The general problem the entry teaches, stated without reference to this incident. e.g. 'df and du disagree because they measure different things'."
     },
     "stack": {
       "type": "array",

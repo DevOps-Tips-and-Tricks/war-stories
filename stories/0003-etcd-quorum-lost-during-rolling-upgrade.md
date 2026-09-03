@@ -1,6 +1,7 @@
 ---
-id: "0001"
+id: "0003"
 title: etcd quorum lost during rolling upgrade
+concept: Config read only at startup fails at the next restart, not when it changes
 stack: [kubernetes, etcd, kubespray]
 severity: sev1
 detection: manual
@@ -11,6 +12,80 @@ blast_radius: cluster
 contributed_by: "@maintainer"
 date: 2025-11
 ---
+
+## The general problem
+
+A quorum system does not check its own configuration. It reads the parts it
+needs at startup, builds connections from them, and then keeps using those
+connections for as long as they stay up. Change the configuration underneath a
+running member and nothing happens — not because the change is correct, but
+because nothing re-reads it.
+
+The failure therefore arrives at a restart, and the restart can be weeks later
+and performed by someone who has never seen the change. Two properties make this
+class of bug expensive:
+
+- **The delay is unbounded.** The fuse is however long it has been since the
+  last restart, so the change and the outage are almost never correlated by the
+  people looking.
+- **Reachability is asked from the wrong place.** On a multi-homed host, "can I
+  reach this address" has a different answer from an operator's workstation than
+  from the peer that actually needs the path. Every tool answers the question you
+  typed, from where you typed it.
+
+Anything with a quorum inherits this: etcd, ZooKeeper, Consul, a database
+cluster's replication addresses, a message broker's advertised listeners.
+
+## Reproduce it
+
+Three etcd members on one host, then a peer address that no peer can route to.
+`192.0.2.13` is documentation space and is unreachable by design — it stands in
+for the wrong interface on a multi-homed node.
+
+```bash
+# 1. bring up a three-member cluster on loopback
+for i in 1 2 3; do
+  etcd --name "m$i" --data-dir "/tmp/etcd-m$i" \
+    --listen-client-urls        "http://127.0.0.1:$((2379+(i-1)*2))" \
+    --advertise-client-urls     "http://127.0.0.1:$((2379+(i-1)*2))" \
+    --listen-peer-urls          "http://127.0.0.1:$((2380+(i-1)*2))" \
+    --initial-advertise-peer-urls "http://127.0.0.1:$((2380+(i-1)*2))" \
+    --initial-cluster 'm1=http://127.0.0.1:2380,m2=http://127.0.0.1:2382,m3=http://127.0.0.1:2384' \
+    --initial-cluster-state new >"/tmp/etcd-m$i.log" 2>&1 &
+done
+
+export ETCDCTL_ENDPOINTS=http://127.0.0.1:2379,http://127.0.0.1:2381,http://127.0.0.1:2383
+etcdctl endpoint health          # three healthy members
+```
+
+```bash
+# 2. break m3's peer address — the cluster does not react
+ID=$(etcdctl member list | awk -F', ' '$3=="m3" {print $1}')
+etcdctl member update "$ID" --peer-urls=http://192.0.2.13:2380
+etcdctl endpoint health          # still three healthy members
+```
+
+That second `endpoint health` is the whole point. The cluster is already broken
+and every instrument says it is fine, because the existing peer connections were
+built before the change and nothing rebuilds them.
+
+```bash
+# 3. restart m3 — it cannot rejoin, but two of three is still a quorum
+kill %3
+etcdctl endpoint health          # m3 unhealthy, cluster still writable
+
+# 4. restart m2 — quorum is now below two
+kill %2
+etcdctl put canary 1             # hangs, then fails
+```
+
+A healthy run is step 4 succeeding. The instructive part is steps 2 and 3
+looking survivable: one restart proves nothing, because the failure needs a
+second member to leave.
+
+```bash
+pkill -f 'etcd --name m'; rm -rf /tmp/etcd-m1 /tmp/etcd-m2 /tmp/etcd-m3
+```
 
 ## Symptom
 
