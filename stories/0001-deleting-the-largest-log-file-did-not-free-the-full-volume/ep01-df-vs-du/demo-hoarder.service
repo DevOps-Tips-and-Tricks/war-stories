@@ -1,0 +1,9 @@
+# /etc/systemd/system/demo-hoarder.service
+[Unit]
+# I start/stop this a lot while recording. systemd has no inline comments:
+# a comment after the value makes the line invalid and the default limit stays.
+StartLimitIntervalSec=0
+
+[Service]
+ExecStart=/usr/local/sbin/demo-hoarder.sh
+Restart=always
