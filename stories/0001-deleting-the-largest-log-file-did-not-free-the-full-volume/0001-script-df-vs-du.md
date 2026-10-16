@@ -3,7 +3,7 @@
 **Source entry:** `0001-deleting-the-largest-log-file-did-not-free-the-full-volume.md`
 **Target length:** 14–16 min
 **Format:** tmux, five panes, live, not pre-solved. One cut between Act 2 and Act 3.
-**Repo:** `ep01-df-vs-du/` — `lab-setup.sh`, `lab-panes.sh`, `teardown.sh`, unit file, logrotate config
+**Lab files:** `ep01-df-vs-du/` next to this script — extracted from the blocks below. Edit both together.
 **Explainer visual:** `0001-deleted-but-open-simulator.html` — Beat 2 only. No separate primer video.
 
 > Everything below has been through the lab. Where something bit during rehearsal
@@ -177,7 +177,9 @@ chmod +x /usr/local/sbin/demo-hoarder.sh
 ```ini
 # /etc/systemd/system/demo-hoarder.service
 [Unit]
-StartLimitIntervalSec=0        # I start/stop this a lot while recording
+# I start/stop this a lot while recording. systemd has no inline comments:
+# a comment after the value makes the line invalid and the default limit stays.
+StartLimitIntervalSec=0
 
 [Service]
 ExecStart=/usr/local/sbin/demo-hoarder.sh
@@ -658,7 +660,7 @@ systemctl daemon-reload
 umount /var/log/demo-app 2>/dev/null || true
 losetup -j /root/demo-disk.img | cut -d: -f1 | xargs -r losetup -d
 rm -f /root/demo-disk.img
-rm -f /etc/logrotate.d/demo-app
+rm -f /etc/logrotate.d/demo-app /usr/local/sbin/demo-hoarder.sh
 ```
 
 ---
