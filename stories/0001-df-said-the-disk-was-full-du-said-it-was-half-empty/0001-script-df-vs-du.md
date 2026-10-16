@@ -1,9 +1,10 @@
 # Episode 01 — "df is lying (or is it du?)"
 
-**Source entry:** `stories/0001-df-said-the-disk-was-full-du-said-it-was-half-empty.md`
+**Source entry:** `0001-df-said-the-disk-was-full-du-said-it-was-half-empty.md`
 **Target length:** 14–16 min
 **Format:** tmux, five panes, live, not pre-solved. One cut between Act 2 and Act 3.
 **Repo:** `ep01-df-vs-du/` — `lab-setup.sh`, `lab-panes.sh`, `teardown.sh`, unit file, logrotate config
+**Explainer visual:** `0001-deleted-but-open-simulator.html` — Beat 2 only. No separate primer video.
 
 > Everything below has been through the lab. Where something bit during rehearsal
 > it's marked **[gotcha]** — those are the parts that look fine on paper and fail on
@@ -274,9 +275,25 @@ once, while the numbers keep moving:
 > still holding the second. So the data is unreachable and undeletable at the same
 > time.
 
-Draw the three-box sketch here if you draw anything: *directory entry → inode → data
-blocks*, strike through the first. The panes carry the motion; the sketch carries the
-concept.
+Switch to `0001-deleted-but-open-simulator.html` for this explanation. It replaces the
+inode primer video, so this is the first time the viewer sees *directory entry → inode →
+data blocks*. The panes carry the motion; the simulator carries the concept.
+
+- Open it full screen and press `P` before recording — presenter mode hides the step
+  chips, buttons and brand line. Space or `→` advances, `←` goes back, `R` resets to
+  step 1.
+- Walk steps 1–4 (`start`, `rotate 1`, `ls -l`, `rotate 2`). They replay what the lab
+  just did, slowly, with `nlink` and `open fds` visible — the two conditions the
+  explanation above is about. Pause on step 4: `nlink 0`, `open fds 1`, orphan list
+  active, `df` and `du` split.
+- Steps 5–7 (`lsof +L1`, `truncate`, `stop`) are optional. Use step 6 in Beat 4 only if
+  the live `df` pane doesn't read clearly on camera; the live terminal is the stronger
+  proof.
+- **[gotcha]** The simulator's numbers come from an earlier lab run (`/dev/loop5`,
+  PID `474462`, `56M`). Your live panes will show a different loop device and PID. Don't
+  point at those values in the simulator; point at `nlink`, `open fds` and the gauges.
+
+Then switch back to tmux.
 
 Then stop talking and let `df` reach 100%. It gets there on its own.
 
@@ -628,6 +645,7 @@ rm -f /etc/logrotate.d/demo-app
 - [ ] fd pane command is single-quoted; `ps aux | grep watch` shows `$(...)` unexpanded
 - [ ] fd pane survives `systemctl restart demo-hoarder`
 - [ ] All five panes readable on a phone at 1080p (test on the phone)
+- [ ] Simulator opens full screen in presenter mode (`P`), fonts loaded, readable on a phone
 - [ ] Pane titles visible; `watch -t` suppressing the truncated header
 - [ ] Colour contrast checked — dark red/blue on black vanish under compression
 
