@@ -1,0 +1,788 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Deleted But Open</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+  /* Layout: one-screen instrument panel — command banner, three-column kernel state, df/du verdict band.
+     Single dark theme by intent: this is a recording asset that has to match the channel's intro. */
+  :root {
+    --ground: #0A111D;
+    --panel: #111A2A;
+    --panel-2: #16203345;
+    --rule: #1F2A3E;
+    --ink: #F5EEE2;
+    --dim: #76829B;
+    --accent: #EC9A46;
+    --accent-soft: rgba(236, 154, 70, .12);
+    --danger: #E95460;
+    --danger-soft: rgba(233, 84, 96, .13);
+    --ok: #5BC98B;
+    --ok-soft: rgba(91, 201, 139, .12);
+
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.5;
+    direction: ltr;
+    text-align: left;
+    overflow: hidden;
+  }
+
+  .stage {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 18px;
+    max-width: 1500px;
+    margin: 0 auto;
+  }
+
+  /* ---------- banner ---------- */
+  .banner {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    padding: 14px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: none;
+  }
+
+  .banner-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .step-no {
+    font-family: var(--mono);
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .brand {
+    font-family: var(--mono);
+    font-size: .72rem;
+    letter-spacing: .22em;
+    color: var(--dim);
+    text-transform: uppercase;
+  }
+
+  .cmd {
+    font-family: var(--mono);
+    font-size: clamp(1rem, 1.7vh + .5rem, 1.5rem);
+    font-weight: 700;
+    color: var(--ink);
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 2px;
+  }
+
+  .cmd .sigil { color: var(--accent); }
+
+  .desc {
+    font-size: clamp(.9rem, 1vh + .5rem, 1.05rem);
+    color: #C8CEDC;
+    max-width: 92ch;
+    text-wrap: pretty;
+  }
+
+  .desc b { color: var(--ink); font-weight: 600; }
+  .desc code {
+    font-family: var(--mono);
+    font-size: .92em;
+    color: var(--accent);
+  }
+
+  /* ---------- kernel state grid ---------- */
+  .tier {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1.05fr 1fr 1.05fr;
+    gap: 14px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding-bottom: 9px;
+    border-bottom: 1px solid var(--rule);
+    flex: none;
+  }
+
+  .card-title {
+    font-family: var(--mono);
+    font-size: .76rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  .card-sub {
+    font-family: var(--mono);
+    font-size: .7rem;
+    color: var(--dim);
+  }
+
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* directory + fd rows */
+  .row {
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-family: var(--mono);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: var(--panel-2);
+    transition: border-color .25s ease, background .25s ease, opacity .25s ease;
+    flex: none;
+  }
+
+  .row .name { font-size: .95rem; font-weight: 700; color: var(--ink); }
+  .row .ptr  { font-size: .78rem; color: var(--dim); white-space: nowrap; }
+
+  .row.tracked { border-color: var(--accent); background: var(--accent-soft); }
+  .row.tracked .ptr { color: var(--accent); }
+  .row.gone    { border-color: var(--danger); background: var(--danger-soft); }
+  .row.gone .name { color: var(--danger); text-decoration: line-through; }
+  .row.gone .ptr  { color: var(--danger); text-decoration: none; }
+  .row.idle    { opacity: .45; }
+
+  .empty-note {
+    font-family: var(--mono);
+    font-size: .76rem;
+    color: var(--dim);
+    padding: 8px 2px;
+  }
+
+  /* inode card */
+  .card.inode { border-color: var(--accent); }
+  .card.inode.orphan { border-color: var(--danger); }
+  .card.inode.freed  { border-color: var(--rule); opacity: .6; }
+
+  .metric {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 7px;
+    background: var(--panel-2);
+    font-family: var(--mono);
+    flex: none;
+  }
+
+  .metric .k { font-size: .8rem; color: var(--dim); }
+  .metric .v {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .metric .v.zero { color: var(--danger); }
+  .metric .v.held { color: var(--accent); }
+
+  .flag {
+    text-align: center;
+    padding: 9px;
+    border-radius: 7px;
+    font-family: var(--mono);
+    font-size: .76rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    border: 1px solid var(--rule);
+    color: var(--dim);
+    background: var(--panel-2);
+    transition: all .25s ease;
+    flex: none;
+  }
+  .flag.on {
+    border-color: var(--danger);
+    color: var(--danger);
+    background: var(--danger-soft);
+  }
+
+  .blocks {
+    font-family: var(--mono);
+    font-size: .76rem;
+    color: var(--dim);
+    text-align: center;
+    padding-top: 4px;
+    margin-top: auto;
+    flex: none;
+  }
+  .blocks .state { color: var(--accent); }
+  .blocks.orphan .state { color: var(--danger); }
+  .blocks.freed .state { color: var(--dim); }
+
+  /* ---------- verdict band ---------- */
+  .verdict {
+    flex: none;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 18px;
+    align-items: center;
+  }
+  .verdict.split { border-color: var(--danger); }
+
+  .gauges { display: flex; flex-direction: column; gap: 9px; min-width: 0; }
+
+  .gauge {
+    display: grid;
+    grid-template-columns: 3.1rem 1fr 7.5rem;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--mono);
+  }
+
+  .gauge .tool {
+    font-size: .88rem;
+    font-weight: 700;
+    color: var(--dim);
+    letter-spacing: .05em;
+  }
+
+  .track {
+    height: 16px;
+    border-radius: 4px;
+    background: #0C1524;
+    border: 1px solid var(--rule);
+    overflow: hidden;
+  }
+
+  .fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width .5s cubic-bezier(.4, 0, .2, 1), background .3s ease;
+  }
+  .fill.full { background: var(--danger); }
+
+  .gauge .read {
+    font-size: .9rem;
+    color: var(--ink);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .call {
+    font-family: var(--mono);
+    font-size: .82rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-align: right;
+    padding: 8px 14px;
+    border-radius: 7px;
+    border: 1px solid var(--rule);
+    color: var(--dim);
+    background: var(--panel-2);
+    white-space: nowrap;
+  }
+  .call.split { border-color: var(--danger); color: var(--danger); background: var(--danger-soft); }
+  .call.agree { border-color: var(--ok); color: var(--ok); background: var(--ok-soft); }
+
+  /* ---------- controls ---------- */
+  .controls {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .trail { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; min-width: 0; }
+
+  .chip {
+    font-family: var(--mono);
+    font-size: .74rem;
+    padding: 5px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--rule);
+    background: var(--panel);
+    color: var(--dim);
+    cursor: pointer;
+    transition: all .2s ease;
+    animation: pop .32s cubic-bezier(.34, 1.3, .64, 1) both;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--ink); }
+  .chip.now { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(5px) scale(.94); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .nav { display: flex; align-items: center; gap: 9px; }
+
+  button {
+    font-family: var(--sans);
+    font-size: .88rem;
+    font-weight: 500;
+    padding: 9px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--rule);
+    background: var(--panel);
+    color: var(--ink);
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+  button:disabled { opacity: .32; cursor: not-allowed; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  button.go {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #14100A;
+    font-weight: 600;
+  }
+  button.go:hover:not(:disabled) { background: #F2A757; }
+
+  .keyhint {
+    font-family: var(--mono);
+    font-size: .7rem;
+    color: var(--dim);
+    letter-spacing: .04em;
+  }
+
+  /* presenter mode: strip everything but the teaching surface */
+  body.presenting .controls,
+  body.presenting .brand { display: none; }
+
+  /* change pulse */
+  .pulse { animation: pulse .7s ease-out; }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(236, 154, 70, .55); }
+    100% { box-shadow: 0 0 0 14px rgba(236, 154, 70, 0); }
+  }
+  .pulse-bad { animation: pulseBad .7s ease-out; }
+  @keyframes pulseBad {
+    0%   { box-shadow: 0 0 0 0 rgba(233, 84, 96, .55); }
+    100% { box-shadow: 0 0 0 14px rgba(233, 84, 96, 0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      transition-duration: .01ms !important;
+    }
+  }
+
+  @media (max-width: 1000px) {
+    body { overflow: auto; }
+    html, body { height: auto; }
+    .stage { height: auto; }
+    .tier { grid-template-columns: 1fr; }
+    .cmd { white-space: normal; word-break: break-word; }
+    .verdict { grid-template-columns: 1fr; }
+    .call { text-align: center; }
+    .gauge { grid-template-columns: 2.8rem 1fr; }
+    .gauge .read { grid-column: 2; text-align: left; }
+  }
+</style>
+
+<div class="stage">
+
+  <div class="banner">
+    <div class="banner-top">
+      <span class="step-no" id="stepNo">Step 1 / 7</span>
+      <span class="brand">DevOps Tips and Tricks &middot; ep01</span>
+    </div>
+    <div class="cmd" id="cmd"></div>
+    <p class="desc" id="desc"></p>
+  </div>
+
+  <div class="tier">
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Directory</span>
+        <span class="card-sub">/var/log/demo-app</span>
+      </div>
+      <div class="card-body" id="dirBody"></div>
+    </div>
+
+    <div class="card inode" id="inodeCard">
+      <div class="card-head">
+        <span class="card-title">Inode 13</span>
+        <span class="card-sub">dev 7,5</span>
+      </div>
+      <div class="card-body">
+        <div class="metric" id="nlinkMetric">
+          <span class="k">nlink</span>
+          <span class="v" id="nlinkVal">1</span>
+        </div>
+        <div class="metric" id="fdMetric">
+          <span class="k">open fds</span>
+          <span class="v" id="fdVal">1</span>
+        </div>
+        <div class="flag" id="orphanFlag">ext4 orphan list &mdash; inactive</div>
+        <div class="blocks" id="blocksLine">
+          data blocks &middot; <span class="state">allocated</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">Process 474462</span>
+        <span class="card-sub">demo-hoarder.sh</span>
+      </div>
+      <div class="card-body" id="fdBody"></div>
+    </div>
+
+  </div>
+
+  <div class="verdict" id="verdict">
+    <div class="gauges">
+      <div class="gauge">
+        <span class="tool">df</span>
+        <div class="track"><div class="fill" id="dfFill"></div></div>
+        <span class="read" id="dfRead">23M / 56M &middot; 41%</span>
+      </div>
+      <div class="gauge">
+        <span class="tool">du</span>
+        <div class="track"><div class="fill" id="duFill"></div></div>
+        <span class="read" id="duRead">23M</span>
+      </div>
+    </div>
+    <div class="call" id="call">in agreement</div>
+  </div>
+
+  <div class="controls">
+    <div class="trail" id="trail"></div>
+    <div class="nav">
+      <span class="keyhint">space &middot; &larr; &rarr; &middot; R &middot; P</span>
+      <button id="backBtn" type="button">Back</button>
+      <button id="nextBtn" class="go" type="button">Run next &rarr;</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var TOTAL_MB = 56;
+
+  // Values are the real ones from the lab run: inode 13 on /dev/loop5,
+  // bash holding fd 9 write-only, PID 474462.
+  var steps = [
+    {
+      chip: "start",
+      cmd: "systemctl start demo-hoarder",
+      desc: "The writer opens the log once with <code>exec 9&gt;&gt;</code> and holds that descriptor for the life of the process. Every real daemon does this. <b>df and du agree</b>, because the file has a name and the blocks are reachable through it.",
+      dir: [
+        { name: "access.log", ptr: "→ inode 13", cls: "tracked" }
+      ],
+      nlink: 1, fds: 1,
+      fd9: "/var/log/demo-app/access.log", fd9Deleted: false,
+      orphan: false, freed: false,
+      blocks: "allocated",
+      df: 23, du: 23,
+      verdict: "agree",
+      pulse: []
+    },
+    {
+      chip: "rotate 1",
+      cmd: "logrotate -f /etc/logrotate.d/demo-app",
+      desc: "The <code>create</code> directive renames the file and makes a fresh one at the old path. <b>rename() is a directory operation</b> — it never touches the inode, so fd 9 follows along without noticing. nlink is still 1. Nothing looks wrong yet.",
+      dir: [
+        { name: "access.log.1", ptr: "→ inode 13", cls: "tracked" },
+        { name: "access.log",   ptr: "→ inode 14 (0 B)", cls: "idle" }
+      ],
+      nlink: 1, fds: 1,
+      fd9: "/var/log/demo-app/access.log.1", fd9Deleted: false,
+      orphan: false, freed: false,
+      blocks: "allocated",
+      df: 24, du: 24,
+      verdict: "agree",
+      pulse: ["dir", "fd"]
+    },
+    {
+      chip: "ls -l",
+      cmd: "ls -l /var/log/demo-app",
+      desc: "The new <code>access.log</code> is zero bytes and will stay that way forever. The process never learned a new file exists — it holds a descriptor, not a path, so <b>every write still lands on inode 13</b>.",
+      dir: [
+        { name: "access.log.1", ptr: "→ inode 13 (44M)", cls: "tracked" },
+        { name: "access.log",   ptr: "→ inode 14 (0 B)", cls: "idle" }
+      ],
+      nlink: 1, fds: 1,
+      fd9: "/var/log/demo-app/access.log.1", fd9Deleted: false,
+      orphan: false, freed: false,
+      blocks: "allocated",
+      df: 44, du: 44,
+      verdict: "agree",
+      pulse: ["dir"]
+    },
+    {
+      chip: "rotate 2",
+      cmd: "logrotate -f /etc/logrotate.d/demo-app",
+      desc: "<code>rotate 1</code> keeps one archive, so <code>access.log.1</code> is unlinked. <b>unlink() removed the name, not the file.</b> nlink hits 0 but fd 9 is still open, so the kernel cannot free the inode — it goes on the ext4 orphan list. du walks the tree and finds nothing. df reads the superblock and sees every block still allocated.",
+      dir: [
+        { name: "access.log", ptr: "→ inode 14 (0 B)", cls: "idle" }
+      ],
+      dirNote: "inode 13 has no name in any directory",
+      nlink: 0, fds: 1,
+      fd9: "/var/log/demo-app/access.log.1 (deleted)", fd9Deleted: true,
+      orphan: true, freed: false,
+      blocks: "unreachable — still allocated",
+      df: 56, du: 0.004,
+      verdict: "split",
+      pulse: ["dir", "fd", "nlink", "orphan", "verdict"]
+    },
+    {
+      chip: "lsof +L1",
+      cmd: "lsof -a -nP +L1 /var/log/demo-app",
+      desc: "<code>+L1</code> means link count below 1 — deleted but open, by definition. <code>-a</code> ANDs it with the mount point, so you get only what is deleted <b>on the filesystem that is full</b>. Underneath, every tool for this reads <code>/proc/474462/fd</code>.",
+      dir: [
+        { name: "access.log", ptr: "→ inode 14 (0 B)", cls: "idle" }
+      ],
+      dirNote: "inode 13 has no name in any directory",
+      nlink: 0, fds: 1,
+      fd9: "/var/log/demo-app/access.log.1 (deleted)", fd9Deleted: true,
+      orphan: true, freed: false,
+      blocks: "unreachable — still allocated",
+      df: 56, du: 0.004,
+      verdict: "split",
+      pulse: ["fd"]
+    },
+    {
+      chip: "truncate",
+      cmd: "truncate -s 0 /proc/474462/fd/9",
+      desc: "That path resolves to the inode itself, so the blocks come back instantly and the process never notices. <b>Watch what did not change:</b> fd 9 still reads the same deleted path, nlink is still 0, the inode is still an orphan. truncate frees blocks, not descriptors — and an unchanged fd entry is the proof you disturbed nothing.",
+      dir: [
+        { name: "access.log", ptr: "→ inode 14 (0 B)", cls: "idle" }
+      ],
+      dirNote: "inode 13 has no name in any directory",
+      nlink: 0, fds: 1,
+      fd9: "/var/log/demo-app/access.log.1 (deleted)", fd9Deleted: true,
+      orphan: true, freed: false,
+      blocks: "truncated — 0 blocks held",
+      df: 1.2, du: 0.004,
+      verdict: "agree",
+      pulse: ["verdict"]
+    },
+    {
+      chip: "stop",
+      cmd: "systemctl stop demo-hoarder",
+      desc: "The descriptor closes. Now <b>both conditions hold</b> — nlink == 0 and no open fd — so the kernel takes inode 13 off the orphan list and frees it for good. The permanent fix is upstream: <code>copytruncate</code>, or a <code>postrotate</code> signal that tells the process to reopen.",
+      dir: [
+        { name: "access.log", ptr: "→ inode 14 (0 B)", cls: "idle" }
+      ],
+      dirNote: "inode 13 is gone",
+      nlink: 0, fds: 0,
+      fd9: null, fd9Deleted: false,
+      orphan: false, freed: true,
+      blocks: "freed",
+      df: 1.2, du: 0.004,
+      verdict: "agree",
+      pulse: ["fd", "nlink"]
+    }
+  ];
+
+  var at = 0;
+
+  var el = function (id) { return document.getElementById(id); };
+
+  function fmt(mb) {
+    if (mb < 0.01) return "4.0K";
+    if (mb < 1) return (mb * 1024).toFixed(0) + "K";
+    return mb.toFixed(mb < 10 ? 1 : 0) + "M";
+  }
+
+  function flash(node, bad) {
+    if (!node) return;
+    var cls = bad ? "pulse-bad" : "pulse";
+    node.classList.remove("pulse", "pulse-bad");
+    void node.offsetWidth;
+    node.classList.add(cls);
+  }
+
+  function render(animate) {
+    var s = steps[at];
+    var bad = s.verdict === "split";
+
+    el("stepNo").textContent = "Step " + (at + 1) + " / " + steps.length;
+    el("cmd").innerHTML = '<span class="sigil">$</span> ' + s.cmd;
+    el("desc").innerHTML = s.desc;
+
+    // directory
+    var dir = el("dirBody");
+    dir.innerHTML = "";
+    s.dir.forEach(function (e) {
+      var row = document.createElement("div");
+      row.className = "row " + e.cls;
+      row.innerHTML = '<span class="name">' + e.name + '</span><span class="ptr">' + e.ptr + "</span>";
+      dir.appendChild(row);
+    });
+    if (s.dirNote) {
+      var note = document.createElement("div");
+      note.className = "empty-note";
+      note.textContent = "— " + s.dirNote;
+      dir.appendChild(note);
+    }
+
+    // inode
+    el("nlinkVal").textContent = s.nlink;
+    el("nlinkVal").className = "v" + (s.nlink === 0 ? " zero" : "");
+    el("fdVal").textContent = s.fds;
+    el("fdVal").className = "v" + (s.fds > 0 && s.nlink === 0 ? " held" : "");
+
+    var card = el("inodeCard");
+    card.className = "card inode" + (s.orphan ? " orphan" : s.freed ? " freed" : "");
+
+    var flag = el("orphanFlag");
+    flag.className = "flag" + (s.orphan ? " on" : "");
+    flag.textContent = s.orphan
+      ? "ext4 orphan list — ACTIVE"
+      : s.freed
+        ? "ext4 orphan list — cleared, inode freed"
+        : "ext4 orphan list — inactive";
+
+    var bl = el("blocksLine");
+    bl.className = "blocks" + (s.orphan ? " orphan" : s.freed ? " freed" : "");
+    bl.innerHTML = 'data blocks &middot; <span class="state">' + s.blocks + "</span>";
+
+    // fd table
+    var fdb = el("fdBody");
+    fdb.innerHTML = "";
+    if (s.fd9) {
+      var r = document.createElement("div");
+      r.className = "row " + (s.fd9Deleted ? "gone" : "tracked");
+      r.innerHTML = '<span class="name">9w</span><span class="ptr">→ ' + s.fd9 + "</span>";
+      fdb.appendChild(r);
+    } else {
+      var n = document.createElement("div");
+      n.className = "empty-note";
+      n.textContent = "— no open descriptors";
+      fdb.appendChild(n);
+    }
+
+    // gauges
+    var dfPct = Math.min(100, (s.df / TOTAL_MB) * 100);
+    var duPct = Math.min(100, (s.du / TOTAL_MB) * 100);
+    el("dfFill").style.width = dfPct + "%";
+    el("duFill").style.width = duPct + "%";
+    el("dfFill").className = "fill" + (dfPct >= 99 ? " full" : "");
+    el("duFill").className = "fill";
+    el("dfRead").textContent = fmt(s.df) + " / 56M · " + Math.round(dfPct) + "%";
+    el("duRead").textContent = fmt(s.du);
+
+    el("verdict").className = "verdict" + (bad ? " split" : "");
+    var call = el("call");
+    call.className = "call " + (bad ? "split" : "agree");
+    call.textContent = bad ? "← these disagree" : "in agreement";
+
+    // trail: only revealed steps
+    var trail = el("trail");
+    trail.innerHTML = "";
+    for (var i = 0; i <= at; i++) {
+      (function (idx) {
+        var c = document.createElement("button");
+        c.type = "button";
+        c.className = "chip" + (idx === at ? " now" : "");
+        c.textContent = (idx + 1) + ". " + steps[idx].chip;
+        c.addEventListener("click", function () { at = idx; render(true); });
+        trail.appendChild(c);
+      })(i);
+    }
+
+    el("backBtn").disabled = at === 0;
+    el("nextBtn").disabled = at === steps.length - 1;
+    el("nextBtn").textContent = at === steps.length - 1 ? "End" : "Run next →";
+
+    if (animate && s.pulse.length) {
+      var map = {
+        dir: el("dirBody"),
+        fd: el("fdBody"),
+        nlink: el("nlinkMetric"),
+        orphan: el("orphanFlag"),
+        verdict: el("verdict")
+      };
+      s.pulse.forEach(function (k) { flash(map[k], bad); });
+    }
+  }
+
+  function step(delta) {
+    var n = at + delta;
+    if (n < 0 || n >= steps.length) return;
+    at = n;
+    render(true);
+  }
+
+  el("nextBtn").addEventListener("click", function () { step(1); });
+  el("backBtn").addEventListener("click", function () { step(-1); });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var k = e.key;
+    if (k === " " || k === "ArrowRight" || k === "Enter" || k === "PageDown") {
+      e.preventDefault(); step(1);
+    } else if (k === "ArrowLeft" || k === "Backspace" || k === "PageUp") {
+      e.preventDefault(); step(-1);
+    } else if (k === "r" || k === "R") {
+      e.preventDefault(); at = 0; render(false);
+    } else if (k === "p" || k === "P") {
+      e.preventDefault(); document.body.classList.toggle("presenting");
+    }
+  });
+
+  render(false);
+})();
+</script>
+
+</body></html>

@@ -1,8 +1,9 @@
 # Episode 01 — Run of show
 
-Working document. Detail lives in `ep01-df-vs-du.md` (script), `ep01-spoken-lines.md`
-(verbatim lines), `ep01-cheatsheet.md` (mechanism), `channel-mental-models.md` (why any
-of this is structured the way it is).
+Working document. Detail lives in `0001-script-df-vs-du.md` (script),
+`0001-spoken-lines.md` (verbatim lines), `0001-cheatsheet.md` (mechanism),
+`0001-deleted-but-open-simulator.html` (the Beat 2b visual) and `channel-mental-models.md`
+(why any of this is structured the way it is).
 
 ---
 
@@ -75,13 +76,12 @@ for the channel more than any explanation will.
 |---|---|---|---|
 | 0:00 | Intro sting | logo animation | `devops-tips-intro.mp4` |
 | 0:10 | **Act 3a — the symptom.** Page, crashing pod, df 100%, du ~0, empty directory. First hypothesis, and why it was wrong. **Stop.** | real terminal, real Grafana | 90s. Obey the word list above |
-| 1:40 | **The promise.** df says full, du says empty, neither is broken. | single terminal | from `ep01-spoken-lines.md` §1 |
+| 1:40 | **The promise.** df says full, du says empty, neither is broken. | single terminal | from `0001-spoken-lines.md` §1 |
 | 2:00 | **Act 1 — the lab.** *"To explain this I need to show it on a machine where nothing is at stake. Same bug, sixty megabytes, no database."* Build it on camera. | tmux, 5 panes | `lab-setup.sh` |
-| 3:50 | **Primer** — how a file actually works | explainer video | `inode-explainer-15s.mp4`, **trimmed to 0:10** |
 | 4:00 | Start the writer. All four panes agree. Name the agreement out loud. | tmux | — |
 | 4:40 | **Beat 1** — first rotation. rename follows the inode. Still looks healthy. | tmux | — |
 | 5:10 | **Beat 2a** — second rotation. The panes diverge. Ask the question, then **two seconds of silence.** | tmux | *"Directory's empty. Disk is full. Where's the space?"* |
-| 5:40 | **Beat 2b** — the mechanism, step by step. → **Move 1** | simulator, steps 1–4 | the live page |
+| 5:40 | **Beat 2b** — the mechanism, step by step. → **Move 1** | `0001-deleted-but-open-simulator.html`, steps 1–4 | the only explainer visual — no inode primer earlier |
 | 6:50 | **Callback.** *"That's exactly what the database node was doing."* One line, keep moving. | tmux | closes half the loop |
 | 7:00 | **Beat 3** — find it cold. `lsof +L1` → `grep deleted` → `-a` scoped | tmux | — |
 | 8:10 | **Beat 4** — truncate. Then: *what did not change.* → **Move 2** | tmux | run first, talk second |
