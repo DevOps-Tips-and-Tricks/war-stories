@@ -7,7 +7,10 @@ Checks, in order:
   3. All required H2 sections are present, in order, and non-empty. Entries
      open with the general problem and a runnable reproduction before the
      incident narrative starts.
-  4. The filename matches the id and the slugified title.
+  4. The filename matches the id and the slugified title. An entry is either
+     stories/<name>.md or stories/<name>/<name>.md; in the folder form the
+     folder carries the same name, and every other file in it is a companion
+     (script, notes) that is not validated.
   5. Ids are unique across the corpus.
   6. No routable IP addresses leaked into the prose.
 
@@ -81,6 +84,21 @@ def slugify(value: str) -> str:
     value = value.encode("ascii", "ignore").decode("ascii").lower()
     value = re.sub(r"[^a-z0-9]+", "-", value)
     return value.strip("-")
+
+
+def find_entries(problems: list[Problem]) -> list[Path]:
+    entries = [p for p in STORIES_DIR.glob("*.md") if not p.name.startswith("_")]
+    for folder in STORIES_DIR.iterdir():
+        if not folder.is_dir() or folder.name.startswith(("_", ".")):
+            continue
+        entry = folder / f"{folder.name}.md"
+        if entry.is_file():
+            entries.append(entry)
+        else:
+            problems.append(
+                Problem(folder, f"folder has no entry file named '{entry.name}'")
+            )
+    return sorted(entries)
 
 
 def is_publishable_ip(raw: str) -> bool:
@@ -161,9 +179,9 @@ def main() -> int:
 
     problems: list[Problem] = []
     seen_ids: dict[str, Path] = {}
-    entries = sorted(p for p in STORIES_DIR.glob("*.md") if not p.name.startswith("_"))
+    entries = find_entries(problems)
 
-    if not entries:
+    if not entries and not problems:
         print("no entries found in stories/", file=sys.stderr)
         return 1
 
@@ -210,8 +228,12 @@ def main() -> int:
                 problems.append(
                     Problem(path, f"filename should be '{expected}'")
                 )
+            if path.parent != STORIES_DIR and path.parent.name != expected[:-3]:
+                problems.append(
+                    Problem(path, f"folder should be 'stories/{expected[:-3]}/'")
+                )
             if entry_id in seen_ids:
-                other = seen_ids[entry_id].name
+                other = seen_ids[entry_id].relative_to(ROOT)
                 problems.append(
                     Problem(path, f"id '{entry_id}' is already used by {other}")
                 )
