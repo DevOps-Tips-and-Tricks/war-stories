@@ -26,16 +26,24 @@ FRONT_MATTER_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.DOTALL)
 SEVERITY_ORDER = {"sev1": 0, "sev2": 1, "sev3": 2, "sev4": 3}
 
 
+def entry_paths() -> list[Path]:
+    """stories/<name>.md, or stories/<name>/<name>.md with companion files beside it."""
+    paths = [p for p in STORIES_DIR.glob("*.md") if not p.name.startswith("_")]
+    for folder in STORIES_DIR.iterdir():
+        entry = folder / f"{folder.name}.md"
+        if folder.is_dir() and not folder.name.startswith(("_", ".")) and entry.is_file():
+            paths.append(entry)
+    return sorted(paths)
+
+
 def load_entries() -> list[dict]:
     entries = []
-    for path in sorted(STORIES_DIR.glob("*.md")):
-        if path.name.startswith("_"):
-            continue
+    for path in entry_paths():
         match = FRONT_MATTER_RE.match(path.read_text(encoding="utf-8"))
         if not match:
             continue
         data = yaml.safe_load(match.group(1)) or {}
-        data["_path"] = f"stories/{path.name}"
+        data["_path"] = path.relative_to(ROOT).as_posix()
         entries.append(data)
     return entries
 
