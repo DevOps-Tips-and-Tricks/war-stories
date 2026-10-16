@@ -1,0 +1,8 @@
+# /etc/logrotate.d/demo-app — Beat 6, the permanent fix.
+# copytruncate keeps the inode, so the writer's fd 9 stays valid.
+/var/log/demo-app/access.log {
+    size 20M
+    rotate 1
+    missingok
+    copytruncate
+}

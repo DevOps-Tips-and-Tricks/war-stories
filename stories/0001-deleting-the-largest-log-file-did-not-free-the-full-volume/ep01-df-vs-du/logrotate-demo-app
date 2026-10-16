@@ -1,0 +1,7 @@
+# /etc/logrotate.d/demo-app
+/var/log/demo-app/access.log {
+    size 20M
+    rotate 1
+    missingok
+    create 0644 root root
+}
