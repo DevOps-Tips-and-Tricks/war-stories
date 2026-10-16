@@ -38,7 +38,7 @@ the rest of it is.
 
 | Path | Purpose |
 |---|---|
-| `stories/` | One Markdown file per incident. `_TEMPLATE.md` is skipped by all tooling (leading underscore) |
+| `stories/` | One entry per incident: `stories/<name>.md`, or `stories/<name>/<name>.md` with companion files (episode script, notes) beside it. Only the file named after its folder is validated and indexed. `_TEMPLATE.md` is skipped by all tooling (leading underscore) |
 | `schema/war-story.schema.json` | Draft 2020-12 schema for front matter. `additionalProperties: false` |
 | `scripts/validate.py` | Front matter, section presence/order/length, filename, id uniqueness, leaked IPs |
 | `scripts/build_index.py` | Regenerates the README table between the `INDEX:START` / `INDEX:END` markers |
@@ -76,7 +76,8 @@ Pick the next unused id. Ids are never reused, even if an entry is deleted.
   and `validate.py` rejects it with a dedicated error.
 - The filename must be exactly `{id}-{slugify(title)}.md`. Slugification is
   ASCII-fold, lowercase, non-alphanumerics collapsed to `-`. **If you change the
-  title, rename the file** — this is the most common validation failure.
+  title, rename the file** — and its folder, if it has one. This is the most
+  common validation failure.
 - `title` is 10–80 characters, sentence case, symptom-first, no trailing period.
   "etcd quorum lost during rolling upgrade", not "Fixing our etcd inventory bug".
 - `concept` is 10–80 characters and states the general problem *without the
