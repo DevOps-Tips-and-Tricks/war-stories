@@ -3,22 +3,20 @@ id: "0001"
 title: Deleting the largest log file did not free the full volume
 concept: A deleted file with an open descriptor still owns its blocks
 stack: [linux, kubernetes, mongodb, logrotate]
-severity: sev2
-detection: alerting
-time_to_detect: 30m
-time_to_resolve: 2h
+severity: sev3
+detection: manual
+time_to_detect: 15m
+time_to_resolve: 50m
 root_cause_category: capacity
 blast_radius: single-service
 contributed_by: "@maintainer"
 date: "2026-08"
 ---
 
-> **Draft — incident sections confirmed by the maintainer, with gaps.** Everything
-> above the Symptom section has been run in the lab. The incident sections
-> combine the maintainer's memory of the incident with Kubernetes object
-> metadata and a read-only inspection of the pods two months later. Exact times
-> of the responders' actions were not recorded. `severity`, `detection` and both
-> durations in the front matter still need confirming — **TODO(maintainer)**.
+> **Sources.** Everything above the Symptom section has been run in the lab.
+> The incident sections combine the maintainer's account of the incident with
+> Kubernetes object metadata and a read-only inspection of the pods two months
+> later. Exact times of the responders' actions were not recorded.
 
 ## The general problem
 
