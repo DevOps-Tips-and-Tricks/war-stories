@@ -146,7 +146,7 @@ Then the judgment call:
 ## 8. The bridge into Act 3
 
 > That is the toy version. Here is what this looked like on a cluster I run, where it
-> took down a database.
+> took one member of a database replica set down.
 
 ---
 

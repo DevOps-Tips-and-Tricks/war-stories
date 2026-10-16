@@ -48,12 +48,16 @@ answer to a question the viewer is already holding.
 symptom and stops. Say one word too many and Beat 2 has nothing left to reveal.
 
 **Allowed:**
-- The page, and what time it was
-- The PSMDB pod in CrashLoopBackOff
+- One of three PSMDB pods in CrashLoopBackOff; the other two fine
+- "I deleted the pod. It came back and crashed again."
 - `df -h` → 100%
-- `du -sh` → almost nothing
-- "The directory was empty."
+- `du` → one huge log file
+- "I removed it. `df` still said a hundred percent." — **stop there**
 - Your first hypothesis, and the sentence where you realised it was wrong
+
+**Never claim `du` showed the volume empty.** It didn't — it found the file. The
+mystery in this cold open is a removal that freed nothing, not a disagreement
+between tools.
 
 **Not allowed, at any point before Beat 2:**
 - inode
@@ -75,20 +79,20 @@ for the channel more than any explanation will.
 | time | segment | on screen | note |
 |---|---|---|---|
 | 0:00 | Intro sting | logo animation | `devops-tips-intro.mp4` |
-| 0:10 | **Act 3a — the symptom.** Page, crashing pod, df 100%, du ~0, empty directory. First hypothesis, and why it was wrong. **Stop.** | real terminal, real Grafana | 90s. Obey the word list above |
+| 0:10 | **Act 3a — the symptom.** One crashing pod of three, pod delete didn't help, df 100%, du finds a huge log, `rm` it, df still 100%. First hypothesis, and why it was wrong. **Stop.** | real terminal, real Grafana | 90s. Obey the word list above |
 | 1:40 | **The promise.** df says full, du says empty, neither is broken. | single terminal | from `0001-spoken-lines.md` §1 |
 | 2:00 | **Act 1 — the lab.** *"To explain this I need to show it on a machine where nothing is at stake. Same bug, sixty megabytes, no database."* Build it on camera. | tmux, 5 panes | `lab-setup.sh` |
 | 4:00 | Start the writer. All four panes agree. Name the agreement out loud. | tmux | — |
 | 4:40 | **Beat 1** — first rotation. rename follows the inode. Still looks healthy. | tmux | — |
 | 5:10 | **Beat 2a** — second rotation. The panes diverge. Ask the question, then **two seconds of silence.** | tmux | *"Directory's empty. Disk is full. Where's the space?"* |
 | 5:40 | **Beat 2b** — the mechanism, step by step. → **Move 1** | `0001-deleted-but-open-simulator.html`, steps 1–4 | the only explainer visual — no inode primer earlier |
-| 6:50 | **Callback.** *"That's exactly what the database node was doing."* One line, keep moving. | tmux | closes half the loop |
+| 6:50 | **Callback.** *"That's one of two reasons my `rm` could have freed nothing."* One line, keep moving. | tmux | closes half the loop — never claim it *was* the reason |
 | 7:00 | **Beat 3** — find it cold. `lsof +L1` → `grep deleted` → `-a` scoped | tmux | — |
 | 8:10 | **Beat 4** — truncate. Then: *what did not change.* → **Move 2** | tmux | run first, talk second |
 | 9:10 | **Beat 5** — sparse-file wrinkle (`stat`: size vs blocks) | tmux | only genuinely optional segment |
 | 9:50 | **Beat 6** — the real fix: copytruncate vs postrotate. Prove it on the same panes. → **Move 3** | editor + tmux | — |
 | 10:50 | **Bridge back.** *"So. Back to that node."* | to camera | — |
-| 11:05 | **Act 3b — the resolution.** Re-show the exact `df`/`du` frame from the cold open. Same evidence, readable now. What you did, what you'd do differently. | real terminal, your screenshots | the payoff |
+| 11:05 | **Act 3b — the resolution.** Stop the bleeding (15Gi → 22Gi, restart), the two candidates for the `rm`, why you'll never know, why it filled, what you'd run before the restart. | to camera + terminal | script §3.1. The payoff is the honesty, not a reveal |
 | 13:20 | **Why Kubernetes is worse.** PID namespace, nodefs, eviction cascade. | node terminal | — |
 | 14:40 | **What to actually monitor.** Rate of change, inodes, the exporter. | code + PromQL | — |
 | 15:20 | **Lessons learned — prevent it.** Six actions: audit rotations, know the reopen path, stdout over files, logs off the data volume, test two rotations, `lsof` before `rm` in the runbook. | tmux + to camera | ≈75s. Actions, not habits — don't pre-empt the close |
