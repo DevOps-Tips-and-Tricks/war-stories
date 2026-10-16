@@ -26,8 +26,8 @@ Part of [DevOps Tips and Tricks](https://www.youtube.com/@DevOpsTipsAndTricks).
 
 | # | Incident | General problem | Stack | Sev | Root cause | Time to resolve | By |
 |---|---|---|---|---|---|---|---|
-| 0001 | [df said the disk was full, du said it was half empty](stories/0001-df-said-the-disk-was-full-du-said-it-was-half-empty.md) | A deleted file with an open descriptor still owns its blocks | `linux`, `kubernetes`, `mongodb`, `logrotate` | SEV2 | capacity | 2h | [@maintainer](https://github.com/maintainer) |
-| 0003 | [etcd quorum lost during rolling upgrade](stories/0003-etcd-quorum-lost-during-rolling-upgrade.md) | Config read only at startup fails at the next restart, not when it changes | `kubernetes`, `etcd`, `kubespray` | SEV1 | configuration | 1h35m | [@maintainer](https://github.com/maintainer) |
+| 0001 | [df said the disk was full, du said it was half empty](stories/0001-df-said-the-disk-was-full-du-said-it-was-half-empty/0001-df-said-the-disk-was-full-du-said-it-was-half-empty.md) | A deleted file with an open descriptor still owns its blocks | `linux`, `kubernetes`, `mongodb`, `logrotate` | SEV2 | capacity | 2h | [@maintainer](https://github.com/maintainer) |
+| 0003 | [etcd quorum lost during rolling upgrade](stories/0003-etcd-quorum-lost-during-rolling-upgrade/0003-etcd-quorum-lost-during-rolling-upgrade.md) | Config read only at startup fails at the next restart, not when it changes | `kubernetes`, `etcd`, `kubespray` | SEV1 | configuration | 1h35m | [@maintainer](https://github.com/maintainer) |
 
 _2 entries: **1** capacity, **1** configuration._
 
