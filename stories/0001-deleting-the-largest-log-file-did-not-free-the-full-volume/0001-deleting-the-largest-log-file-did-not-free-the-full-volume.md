@@ -1,6 +1,6 @@
 ---
 id: "0001"
-title: df said the disk was full, du said it was half empty
+title: Deleting the largest log file did not free the full volume
 concept: A deleted file with an open descriptor still owns its blocks
 stack: [linux, kubernetes, mongodb, logrotate]
 severity: sev2
@@ -10,15 +10,15 @@ time_to_resolve: 2h
 root_cause_category: capacity
 blast_radius: single-service
 contributed_by: "@maintainer"
+date: "2026-08"
 ---
 
-> **Draft — incident sections partly verified.** Everything above `## Symptom`
-> has been run in the lab and is accurate. The incident sections below are
-> rebuilt from Kubernetes object metadata and a read-only inspection of the
-> pods, done about two months after the incident. What that evidence cannot
-> show is marked `TODO(maintainer)` — including `severity`, `detection` and
-> both durations in the front matter — and must come from the maintainer's own
-> memory of the incident before this entry is published.
+> **Draft — incident sections confirmed by the maintainer, with gaps.** Everything
+> above the Symptom section has been run in the lab. The incident sections
+> combine the maintainer's memory of the incident with Kubernetes object
+> metadata and a read-only inspection of the pods two months later. Exact times
+> of the responders' actions were not recorded. `severity`, `detection` and both
+> durations in the front matter still need confirming — **TODO(maintainer)**.
 
 ## The general problem
 
@@ -155,168 +155,178 @@ rm -f /root/demo-disk.img /etc/logrotate.d/demo-app /usr/local/sbin/demo-hoarder
 
 ## Symptom
 
-A MongoDB pod on a non-production Kubernetes cluster entered
-`CrashLoopBackOff`. The database was a three-member replica set run by an
-operator, one pod per member, each with its own persistent volume. `df` on the
-pod's data volume reported it full.
+One of the three pods of a MongoDB replica set entered `CrashLoopBackOff`. The
+replica set ran on a non-production Kubernetes cluster under the Percona Server
+for MongoDB operator, one pod per member, each member with its own 15Gi
+persistent volume.
 
-**TODO(maintainer): what `mongod` logged on each restart (the exact wording, if
-any of it survives), whether one member or all three were looping, and — the
-part that narrows the search fastest — what was still working: whether the
-other members stayed up and kept a primary, whether the applications could
-still read and write, whether the node stayed `Ready`.**
+The other two members stayed up and kept a primary. The cluster was degraded,
+not down, and the applications kept working. That narrowed the problem to one
+pod and whatever belonged to it alone — its node, its container, or its volume.
+
+`df` inside the pod reported the data volume at 100%.
 
 ## Timeline
 
-Wall-clock UTC. The only timestamps that survived are in Kubernetes object
-metadata, and `managedFields` keeps only the last write per writer, so this is
-the end of the incident, not its start. Linking these entries to the incident
-is an inference: they are the only volume resize on record for the database.
-**TODO(maintainer): confirm that this is the right day, and add the first
-report, the first thing checked, each hypothesis and when it was dropped, and
-the moment the deleted-but-open file was found.**
+Wall-clock UTC where a timestamp survived in Kubernetes object metadata.
+The responders' own actions were not timed; they are marked `--:--` and listed
+in the order they happened.
 
-- `??:??` — **TODO(maintainer):** first alert or report.
-- `09:48` — The requested volume size in the database's custom resource is
-  raised, and the operator starts to grow the data volume of all three
-  members, not only the one that was crashing.
+- `--:--` — One member pod enters `CrashLoopBackOff`. The other two stay up.
+- `--:--` — We delete the pod. The StatefulSet recreates it on the same volume,
+  and the crash loop resumes.
+- `--:--` — `df` inside the pod shows the data volume at 100%.
+- `--:--` — `du -h -d 1` over the data directory looks normal. The same over the
+  log directory finds one very large file, `mongod.log`.
+- `--:--` — We delete `mongod.log` with `rm`. `df` still reports 100%.
+- `09:48` — To stop the bleeding, we raise the requested volume size in the
+  database's custom resource from 15Gi to 22Gi. The operator grows the data
+  volume of all three members, not only the crashing one.
 - `09:49` — The kubelet finishes the online filesystem resize on members 0
   and 1.
-- `09:52` — The last edit to the custom resource that day. It came from an
-  interactive Kubernetes GUI client, not from a pipeline. One second later the
-  operator recreates the StatefulSet, which is how it applies a new volume
-  claim template.
+- `09:52` — The last edit to the custom resource that day, from an interactive
+  Kubernetes GUI client. One second later the operator recreates the
+  StatefulSet, which is how it applies a new volume claim template.
 - `10:10` — The filesystem resize finishes on member 2.
-- `??:??` — **TODO(maintainer):** the pod leaves `CrashLoopBackOff`, and what
-  was done immediately before it did.
-
-The volumes ended at 22Gi. That odd size suggests a small emergency bump,
-probably from 20Gi, but the old size is not recorded anywhere that survived.
+- `--:--` — We restart the crashing pod. It comes up and rejoins the replica set.
 
 ## What we thought it was
 
-**TODO(maintainer): the hypotheses chased and discarded, and why each was
-reasonable given what was visible at the time.** This is the section the entry
-exists for, and it is the one section that cannot be reconstructed from the
-system afterwards. The metadata shows what was done, not what anybody believed
-while doing it.
+**A pod restart would clear it.** A crash loop usually means bad state inside
+the container — a stuck lock file, a corrupt cache, a failed start — and
+deleting the pod throws that state away. It is the cheapest thing to try and
+it often works. Here it could not: the pod is disposable, the volume is not.
+The StatefulSet gave the new pod the same full volume, and it crashed the same
+way. A full disk is exactly the kind of state a pod restart does not touch.
 
-Prompts, from what the metadata does show:
+**There was no log rotation, so the log simply grew.** In Kubernetes,
+applications normally write to stdout and the kubelet rotates container logs.
+A 15Gi-filling log file on a persistent volume looked like something nobody had
+set up rotation for. That was wrong. The pod had a `logrotate` sidecar container,
+and `mongod` rotates its own log on command. The belief mattered because it
+pointed the investigation at "nobody rotates this" instead of "rotation exists
+and still let one file grow this large", which is the question with the answer.
 
-- Growing all three volumes treats the problem as the database outgrowing its
-  disk. Was that the first theory? What made it look right — and did the resize
-  alone stop the crash loop?
-- The earlier draft of this entry blamed "the operator's own logging". The
-  operator's controller writes nothing to the data volume; the log files there
-  belong to sidecar containers in the database pod. Was the operator a theory on
-  the day, or only in hindsight?
-- When did somebody first run `du` next to `df`, and what made them do it?
+**Deleting the biggest file would give the space back.** `du` named the file, it
+was the largest thing on the volume, and removing it is the obvious move. `df`
+did not move. At that point we stopped investigating and started mitigating:
+grow the volume, restart the pod. The pod came back, so we never learned why
+the deletion freed nothing.
 
-Close with the observation that should have redirected the investigation
-sooner. The candidate to check against memory: `du` on the volume showing far
-less than the pod's own `df`, which was visible before anything was restarted.
+That unchanged `df` was the observation that should have stopped us. A file
+removal that does not change `df` means either something else on the volume is
+just as large, or a process still holds the removed file open. Both are
+checkable in a minute — `du` again, then `ls -l /proc/*/fd | grep deleted` in
+every container of the pod — and both answers are destroyed by the restart that
+fixes the outage.
 
 ## Actual root cause
 
-Space on the data volume was held by a log file that had been rotated and then
-deleted while a process still had it open. The general problem above is the
-mechanism. What made this pod prone to it was its layout.
+The volume filled because the pod's logs and its data shared one 15Gi disk,
+and the logs grew faster than anything checked them.
 
-Each member pod of the Percona Server for MongoDB operator ran three containers,
-and all three mounted the same persistent volume at `/data/db`:
+Each member pod of the operator ran three containers, all mounting the same
+persistent volume at `/data/db`:
 
 | Container | Role | Writes to |
 |---|---|---|
 | `mongod` | The database | `/data/db/logs/mongod.log` |
 | `logs` | fluent-bit: tails `mongod.log`, writes it to stdout **and** to a second full copy | `/data/db/logs/mongod.full.log` |
-| `logrotate` | Runs `logrotate` from a cron-like scheduler | Rotates `/data/db/logs/*.log` |
+| `logrotate` | Runs `logrotate` from a cron scheduler | Rotates the log files in `/data/db/logs` |
 
-There was no separate log volume, so logs and data competed for the same disk,
-and every log line was stored twice. At inspection, logs made up 1.6–2.5G of the
-2.2–3.1G used on each member.
+Four things combined:
 
-The rotation configuration had four problems, each harmless alone:
+- **We had raised `mongod`'s log verbosity.** At higher verbosity `mongod` logs
+  per operation, not per event. For scale, the same member at default verbosity
+  writes about 260 MB of `mongod.log` a day.
+- **Every line was stored twice.** fluent-bit wrote a full copy of `mongod.log`
+  next to it on the same volume.
+- **Size was checked only when the rotation job ran.** The rotation rule had a
+  `maxsize 100M`, but `logrotate` evaluates it only when the scheduler runs it —
+  once a day in the image inspected later. Between runs a log can grow without
+  limit. A size cap is a rate limit only if it is checked faster than the log
+  can grow.
+- **Logs and data shared the volume.** When the logs filled it, `mongod` could
+  no longer write its data files, exited, and was restarted into the same full
+  disk.
 
-- **It ran hourly, not daily.** The config said `daily`, but the scheduler was
-  `go-cron "0 0 * * *"`, and `go-cron` takes a seconds field first. `0 0 * * *`
-  therefore means minute 0 of every hour. With `maxsize 100M`, any file over
-  100 MB was rotated at the next hour.
-- **One glob, one signal, two writers.** `/data/db/logs/*.log` matched both
-  `mongod.log` and fluent-bit's `mongod.full.log`, with `sharedscripts`. The
-  `postrotate` script told `mongod` to reopen its log (`db.adminCommand({
-  logRotate: 1 })`) and never told fluent-bit anything.
-- **Two rotators on one file.** `mongod` rotates by renaming its own log, so the
-  volume held both `mongod.log.2026-…T18-00-00` names from `mongod` and
-  `mongod.log.1` names from `logrotate`. The `mongod` side of the `postrotate`
-  failed in 2 of 5 recent runs with `MongoServerError: Log rotation failed due
-  to one or more errors`, and nothing alerted on it.
-- **The cleanup rule matched the wrong file.** `find … -name 'mongod.full.log'
-  -mtime +7 -delete` matches the live file, not the rotated
-  `mongod.full.log.N` copies.
+The logs path in the custom resource was a trap of its own. It set
+`systemLog.path: /var/log/mongodb/mongod.log`, but that directory did not exist
+in the container: the operator's entrypoint overrode the path to
+`/data/db/logs/mongod.log`. The configuration a responder reads is not the one
+the process runs.
 
-A writer that was not told about a rename keeps writing to the renamed inode.
-When `rotate 10` or the `find` rule later deletes that file, the directory entry
-goes and the blocks stay: `df` full, `du` half empty.
+Why the `rm` freed nothing is **not established**. Two explanations fit, and
+nobody captured the evidence that would separate them:
 
-**Which process held the file is not established.** Nobody captured `lsof` or
-`/proc/*/fd` during the incident, and a scan of all three members two months
-later found no deleted-but-open files. The crash loop itself narrows it down.
-When `mongod` exits, the kernel closes its descriptors. If `mongod` had been the
-only holder, the first crash would have released the space, and the next start
-would have found room. A crash loop that keeps going needs a holder that
-survives the crash. `CrashLoopBackOff` restarts only the container that failed;
-the sidecars in the same pod keep running with their descriptors open. In this
-pod, the long-lived process that follows `mongod.log` across rotations is
-fluent-bit in the `logs` container. **TODO(maintainer): confirm or correct — did
-restarting `mongod` alone ever bring the space back?**
+- **The duplicate.** fluent-bit's full copy of the same log was still on the
+  volume, roughly as large. `df` and `du` would both have shown the volume
+  nearly full.
+- **A process still held the deleted file.** fluent-bit tails `mongod.log`, so
+  it had the file open. `CrashLoopBackOff` restarts only the container that
+  fails; the sidecars keep running with their descriptors. If fluent-bit had
+  not yet released the deleted file, its blocks stayed allocated — the general
+  problem above — and `df` would have stayed at 100% while `du` dropped.
 
-All the images ran floating `:main` development tags, and the rotation
-configuration above is the one inside the image at inspection. What ran on the
-day may have differed.
-
-Kubernetes made the mechanism harder to see in two ways:
+Kubernetes made the second case harder to see in two ways:
 
 - **A shared volume is not a shared process namespace.** The three containers
-  shared `/data/db` but not a PID namespace, so `ls -l /proc/*/fd` run from
-  `kubectl exec` into `mongod` cannot see fluent-bit's descriptors. The check
-  has to run in every container, or from the node, where every process is
-  visible.
-- **The crashing container is not necessarily the culprit.** Kubernetes
-  restarts the container that exits, which is the one showing the symptom. A
-  sidecar that holds the space is never restarted, so the pod can crash-loop
-  indefinitely on a disk that one sidecar restart would free.
+  shared `/data/db` but not a PID namespace, so `ls -l /proc/*/fd` from
+  `kubectl exec` into one container cannot see another container's
+  descriptors. The check has to run in every container, or from the node.
+- **The crashing container is not necessarily the holder.** Kubernetes restarts
+  whatever exits. A sidecar that holds space is never restarted, so a pod can
+  keep crashing on a disk that one sidecar restart would free.
+
+All images ran floating `:main` development tags. The rotation configuration
+changed after the incident: an inspection in September found one rule covering
+`/data/db/logs/*.log` that renamed both files, and one in October found
+`copytruncate` for fluent-bit's copy and `mongod.log` left to `mongod`'s own
+rotation. The old rule also collided with `mongod`: it renamed `mongod.log`, then
+asked `mongod` to rotate a file that was no longer there, which `mongod` logged
+as `FileRenameFailed` and recovered from by creating a new one.
 
 ## Fix
 
-**TODO(maintainer): what was actually done on the day, and in what order.**
-The metadata shows that all three volumes were grown and the StatefulSet was
-recreated. It does not show whether any pod or container was restarted.
+**Stop the bleeding.** We grew the volumes from 15Gi to 22Gi and restarted the
+crashing pod. That worked, and it is also why the root cause above has an
+open question: restarting the pod closed every descriptor in every container,
+so it would have freed a held file too. The fix removed the evidence along with
+the problem.
 
-The distinction matters. Growing a volume does not reclaim blocks that a
-deleted-but-open file owns. It buys headroom, and the held file keeps growing
-into it. Restarting the holder closes the descriptor and frees the blocks at
-once. `truncate -s 0 /proc/<pid>/fd/<n>` frees them with the process still
-running. If the crash loop stopped at 09:48, the resize did it; if it stopped
-later, look for the restart.
+**Durable**, in order of how much they reduce risk:
 
-Durable, and not yet applied — the configuration inspected two months later
-still had all four problems:
-
-- Give each writer its own rotation rule and its own signal. For `mongod`, set
-  `systemLog.logRotate: reopen` with `logAppend: true`, so that `logrotate`
-  renames and `mongod` only reopens, and there is one rotator, not two. For
-  fluent-bit's file output, use `copytruncate`, which keeps the inode and loses
-  only what is written between the copy and the truncate.
-- Write the schedule as `go-cron`'s six fields: `0 0 0 * * *` for daily.
-- Point the cleanup rule at the rotated copies: `-name 'mongod.full.log.*'`.
-- Drop the second full copy of the log, or move logs to their own volume so
-  that a log problem cannot take the database's disk.
+- **Treat verbosity as a capacity decision.** Raise it at runtime with
+  `db.adminCommand({ setParameter: 1, logComponentVerbosity: … })`, which a
+  restart resets, rather than in the configuration file, and set a time to
+  revert it. The startup options inspected later no longer raise verbosity.
+- **Give logs their own volume, or stop storing them twice.** Either a log
+  problem cannot take the database's disk, or it fills it half as fast.
+- **Check size more often than the log can outgrow the check.** Run the rotation
+  job hourly with `maxsize`, so the cap bounds an hour of growth instead of a
+  day.
+- **One rotator per file.** Leave `mongod.log` to `mongod`'s own `logRotate`, and
+  rotate fluent-bit's copy with `copytruncate`, which keeps the inode so a
+  writer that is never told about the rotation keeps writing to the right file.
+  The image inspected in October already does this.
 
 ## What would have prevented it
 
-An alert on deleted-but-open bytes, which almost nobody exports. As a
-node_exporter textfile collector, run from cron on the node — not inside a pod,
-where it would see only one container's processes:
+- **A free-space check before raising verbosity.** A runbook step: take the
+  current log bytes per day from `ls -l` over the log directory, multiply by
+  the expected verbosity factor and by the number of copies, and compare it
+  with `df` free space over the time the setting will stay on. If it does not
+  fit, raise it for a bounded window or move the logs first.
+- **An alert on the rate of change of free space on the volume**, not a static
+  threshold. `predict_linear(kubelet_volume_stats_available_bytes[1h], 4*3600) < 0`
+  fires while there is still time to act. 40% to 80% in ten minutes is an
+  incident; 85% for six months is a Tuesday.
+- **A runbook step before any `rm` on a full volume:** record `df`, delete, record
+  `df` again. If it did not move, run `ls -l /proc/*/fd | grep deleted` in every
+  container of the pod — or `lsof -nP +L1` on the node — **before** restarting
+  anything. The restart is the fix and also the end of the evidence.
+- **An exported metric for deleted-but-open bytes**, run from cron on the node,
+  where every container's processes are visible:
 
 ```bash
 lsof -nP +L1 2>/dev/null \
@@ -329,21 +339,6 @@ segments, which are unlinked on purpose and permanently have a link count of
 zero, and reports a phantom baseline that alerts immediately and never clears.
 Only numbered descriptors (`9w`, `3r`, `12u`) are real open files.
 
-Neither alert would have fired here: no Prometheus scraped this cluster at all.
-An alert rule is only as good as the scrape config under it, so the first check
-is that the cluster appears as a target.
-
-Three cheaper checks alongside it:
-
-- Alert on the *rate of change* of `node_filesystem_avail_bytes` rather than a
-  static threshold — 40% to 80% in ten minutes is an incident, 85% for six
-  months is a Tuesday.
-- Alert on the rotation job's own failures. `Log rotation failed` was already
-  in the `logrotate` container's output, hourly, and nobody read it.
-- Review every rotation rule with one question: for each file this glob
-  matches, which process writes it, and does `postrotate` tell that process?
-  Any file with a writer and no signal fails the review.
-
 ## Generalizable lesson
 
 When two tools disagree about the same number, neither is broken and the gap is
@@ -355,10 +350,10 @@ The corollary is that deleting something does not necessarily release it. Any
 resource whose release depends on both an unlink and a close — file descriptors,
 but also thin-provisioned block devices that need `discard` plumbed through, and
 object stores with versioning — can be freed at one layer and still consumed at
-another. Fixing the layer you can see is not evidence that the space came back.
+another. A deletion that does not change the number you were trying to change is
+not a dead end; it is the most specific clue you will get.
 
-The second corollary is that the process that fails is not necessarily the
-process that holds the resource. A supervisor restarts whatever exits, and the
-thing that exits is the one that ran out. When a restart does not clear a
-resource problem, stop asking why the crashing process fails and ask who else
-is holding what it needs.
+The second corollary is that the stop-the-bleeding step usually destroys the
+evidence. A restart closes every descriptor, clears every cache and resets every
+counter, which is why it works and why it explains nothing. Spend the minute
+before it writing down the state the restart is about to erase.

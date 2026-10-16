@@ -1,6 +1,6 @@
 # Episode 01 — "df is lying (or is it du?)"
 
-**Source entry:** `0001-df-said-the-disk-was-full-du-said-it-was-half-empty.md`
+**Source entry:** `0001-deleting-the-largest-log-file-did-not-free-the-full-volume.md`
 **Target length:** 14–16 min
 **Format:** tmux, five panes, live, not pre-solved. One cut between Act 2 and Act 3.
 **Repo:** `ep01-df-vs-du/` — `lab-setup.sh`, `lab-panes.sh`, `teardown.sh`, unit file, logrotate config
@@ -459,7 +459,7 @@ closes the loop.
 ## Act 3 — Production (9:00–15:00)
 
 > Straight to camera: *"That's the toy version. Here's what this looked like on a
-> cluster I run, where it took down a database."*
+> cluster I run, where it took one member of a database replica set down."*
 
 **Collapse to a single pane here** — `Ctrl-b z` zooms the driver pane, press again to
 restore. The split screen is a teaching instrument for a controlled lab. Act 3 is a war
@@ -474,21 +474,47 @@ channels. Act 3 is not available anywhere.
 > who runs this stack and catches an invented detail costs you the only asset the
 > channel has.
 
-### 3.1 — The incident (fill in from your own notes)
+### 3.1 — The incident
 
 Keep the original telling order. Don't reorganise it into a tidy narrative — the mess
-is the value.
+is the value. Everything below is confirmed from your own account; anything you
+can't remember, say so on camera rather than filling it in.
 
-- **What paged / what broke first:** _[the PSMDB pod entering CrashLoopBackOff]_
-- **First hypothesis, and why it was wrong:** _[...]_
-- **What the dashboards showed vs. what was true:** _[...]_
-- **What you tried that didn't work:** _[...]_
-- **The moment it clicked:** _[...]_
-- **Actual root cause:** the operator's own logging behaviour filling the volume
-- **Fix applied, and what you'd do differently:** _[...]_
+1. **What broke.** One of three PSMDB member pods in `CrashLoopBackOff`. The other two
+   stayed up and kept a primary. Degraded, not down — say that, it's the negative space.
+2. **First move: delete the pod.** Reasonable — most crash loops are bad state inside
+   the container. Didn't help: *"The pod is disposable. The volume isn't. The
+   StatefulSet handed the new pod the same full disk."*
+3. **`df` inside the pod: 100%.** 15Gi volume.
+4. **`du -h -d 1`** over the data directory — normal. Over the logs directory — one
+   huge `mongod.log`.
+5. **The wrong belief:** *"I thought: this is Kubernetes, nothing rotates files on a
+   volume, so the log just grew."* Wrong — the pod had a `logrotate` sidecar, and
+   mongod rotates its own log. Say why it seemed right: in Kubernetes, logs normally
+   go to stdout and the kubelet rotates them.
+6. **`rm mongod.log`. `df` still said 100%.** This is the callback moment — the viewer
+   now knows two reasons that can happen.
+7. **Stop the bleeding.** Grew the PVC from 15Gi to 22Gi, restarted the pod. Fixed.
+8. **What you never found out.** Why the `rm` freed nothing. Two candidates:
+   - fluent-bit's full copy of the same log was still on the volume — `df` and `du`
+     would both say full;
+   - fluent-bit, a sidecar that tails `mongod.log`, still had the deleted file open —
+     Act 2 exactly.
 
-Say the wrong hypothesis out loud. That's the part no model can generate and almost
-nobody records, because everyone wants to look clever. It's why someone subscribes.
+   *"The restart that fixed it closed every file in the pod, so it erased the answer
+   too. I'll never know which one it was."* Don't pick one. The honesty is the point.
+9. **Why it filled.** You had raised mongod's log verbosity. fluent-bit stored every
+   line twice. The rotation sidecar checks `maxsize 100M` only when it runs — once a
+   day — so a burst between runs has no ceiling. And logs shared the 15Gi volume with
+   the data.
+10. **What you'd do differently.** Before the restart: `du` again, then
+    `ls -l /proc/*/fd | grep deleted` in **every** container — one `kubectl exec` per
+    container, because they don't share a PID namespace. One minute, and it would have
+    answered point 8.
+
+**Things you must not say:** that `du` showed the volume half empty (it didn't — `du`
+found the file), that the sidecar held the file (unproven), or that the operator's
+controller filled the volume (it writes nothing there; the sidecars do).
 
 ### 3.2 — Why Kubernetes makes this strictly worse
 
@@ -506,11 +532,11 @@ kubelet evicts pods on that node — including pods with nothing to do with the 
 growth. One noisy writer becomes a multi-tenant incident. Pull the real thresholds on
 screen.
 
-**Operators log too, and nobody budgets for it.** The workload's logs get dashboards.
-The controller's logs sit on a volume nobody watches.
+**Sidecars log too, and nobody budgets for it.** The workload's logs get dashboards.
+A sidecar's second copy sits on the data volume and doubles the bill.
 
-**Ceph-backed PVCs add a second floor** — *only if it was actually part of your
-incident; otherwise 20 seconds as "worth knowing."* Freeing space inside the filesystem
+**Ceph-backed PVCs add a second floor** — *not part of this incident (the volumes were
+OpenEBS LVM local PVs), so 20 seconds as "worth knowing" at most.* Freeing space inside the filesystem
 doesn't return blocks to the pool. RBD images don't shrink, and unless discard is
 plumbed through (`discard` mount option, or periodic `fstrim`) the pool still counts
 them. Node level looks fixed; cluster level isn't. Same shape as `df` vs `du`, one

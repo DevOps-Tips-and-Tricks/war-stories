@@ -52,6 +52,9 @@ This is rebuilt from `managedFields`, CR conditions and file timestamps. Note th
 
 ## Best guess at the incident window: shortly before 2026-08-01 09:48 UTC
 
+**Confirmed by the maintainer on 2026-10-16:** the 2026-08-01 resize was the stop-the-bleeding step. The volumes were **15Gi** before it, not 20Gi. See the follow-up at the end of this file.
+
+
 - It is the only volume resize on record. Growing the disk is the usual first response to a full volume.
 - The size is 22Gi. That odd number suggests a small emergency bump, probably from 20Gi. The old size is **not** confirmed.
 - The CR edit came from an interactive GUI tool, not a pipeline, which fits hands-on firefighting.
@@ -179,3 +182,59 @@ The `logrotate` container runs only `go-cron` between runs. Its `logrotate` proc
 
 - This is a point-in-time check. It cannot say what held the deleted file during the past incident.
 - The failures of the `logRotate` postrotate step (`MongoServerError: Log rotation failed…`, seen in 2 of 5 recent runs on member 0) are still the leading hypothesis for how mongod could end up writing to a deleted file. Catching it in the act would need this scan to run shortly after an hourly rotation that failed.
+
+---
+
+# Follow-up — 2026-10-16
+
+Read-only checks on member 0, plus the maintainer's account of the incident.
+
+## The maintainer's account
+
+- One of the three member pods was in `CrashLoopBackOff`. The other two stayed up; the cluster was degraded, not down.
+- The pod was deleted. It came back on the same volume and kept crashing.
+- `df` inside the pod showed the volume at 100%. The PVC was 15Gi.
+- `du -h -d 1` over the data directory looked normal. Over the log directory it found a very large `mongod.log`.
+- `mongod.log` was deleted with `rm`. `df` still showed 100%.
+- To stop the bleeding, the PVC was grown (to 22Gi, per the metadata) and the pod was restarted. That fixed it.
+- mongod log verbosity had been raised before the incident.
+- Remembered paths `/var/lib/mongo` and `/var/log/mongodb/mongod.log` are not the paths in this pod. Data is under `/data/db`; mongod writes `/data/db/logs/mongod.log`. `/var/log/mongodb/mongod.log` is the `systemLog.path` in the CR, which the entrypoint overrides.
+
+## The rotation configuration changed after the September inspection
+
+`logrotate -d` against `/opt/percona/logcollector/logrotate/logrotate.conf` in today's image shows:
+
+| | Captured 2026-09-26 | Today |
+|---|---|---|
+| Files | `/data/db/logs/*.log` | `mongod.full.log` and `mongos.full.log` only |
+| Kept | `rotate 10` | `rotate 7` |
+| Method | rename | `copytruncate` |
+| mongod `logRotate` | `postrotate` | `prerotate` |
+| `find … 'mongod.full.log' -mtime +7 -delete` | present | gone |
+
+- `daily` and `maxsize 100M` are unchanged. `notifempty` is still set.
+- The scheduler is `supercronic` with `0 0 * * *`: **once a day at 00:00 UTC**. The container logs show one run per day. The entrypoint falls back to `go-cron` only if `supercronic` is missing; the earlier "hourly" reading assumed `go-cron`.
+- The state file has entries for both patterns: `mongod.log` last rotated `2026-10-7`, `mongos.full.log` first seen `2026-10-8`. So the image changed between those runs. The pod restarted at about 07:30 on 2026-10-07 (both `mongod` and the `logrotate` container started then), which is the likely moment a new `:main` image was pulled. Inference, not proof.
+- `mongod.full.log.9` and `.10` are leftovers from `rotate 10`. With `rotate 7`, each run moves `.7` to `.8` and deletes `.8`. The missing `.8` is expected and is **not** evidence of a held file.
+
+## Confirmed: the old rule collided with mongod's own rotation
+
+On 2026-10-07 00:00 the old rule renamed `mongod.log`, then asked mongod to rotate it. mongod logged:
+
+```
+"Log rotation failed" … "codeName":"FileRenameFailed","errmsg":"Source file was missing during log rotation. Creating a new one. file=/data/db/logs/mongod.log"
+```
+
+mongod creates a new `mongod.log` and carries on. It does **not** keep writing to the renamed file. Since 2026-10-08 only mongod rotates `mongod.log`, nightly, with `Log rotation initiated`.
+
+## Current state on member 0
+
+- mongod holds `/data/db/logs/mongod.log` (fd 217) and nothing stale.
+- Startup options: `systemLog` has `logAppend: true`, `logRotate: rename`, `quiet: true`, and no `verbosity`.
+- Logs: 5.7G. About 260 MB/day of `mongod.log` and about 425 MB/day of `mongod.full.log`, each line stored twice. Steady state is roughly 6.5–7G on a 22Gi volume.
+
+## Still unknown
+
+- Why `rm mongod.log` did not change `df`: the duplicate `mongod.full.log` still on disk, or fluent-bit still holding the deleted file. Nothing was captured before the restart.
+- Which scheduler and rotation rule ran in July–August 2026.
+- The verbosity level used, and how it was set (config file or runtime `setParameter`).
