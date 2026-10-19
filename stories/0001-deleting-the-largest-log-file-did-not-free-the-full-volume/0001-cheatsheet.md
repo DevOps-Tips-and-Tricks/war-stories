@@ -349,7 +349,7 @@ losetup -j /root/demo-disk.img         # find the device for a file
 sudo losetup -d /dev/loop0             # detach
 ```
 
-`fallocate` allocates real blocks immediately; `truncate -s 64M` would make a sparse
+`fallocate` allocates real blocks immediately; `truncate -s 128M` would make a sparse
 image, so the host would only consume space as the guest fills. For this demo
 `fallocate` is right — you want host accounting to be boring.
 
