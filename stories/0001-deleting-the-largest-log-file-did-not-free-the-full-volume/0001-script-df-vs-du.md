@@ -118,7 +118,7 @@ MOUNT=/var/log/demo-app
 IMG=/root/demo-disk.img
 
 mkdir -p "$MOUNT"
-fallocate -l 64M "$IMG"
+fallocate -l 128M "$IMG"
 mkfs.ext4 -q -m 0 "$IMG"
 mount -o loop "$IMG" "$MOUNT"
 
@@ -128,10 +128,10 @@ findmnt "$MOUNT" >/dev/null || { echo "FATAL: $MOUNT is not a separate mount"; e
 df -h "$MOUNT"
 ```
 
-64M on purpose, so the fill is watchable. `-m 0` drops ext4's 5% root reserve so the
+128M on purpose, so the fill is watchable. `-m 0` drops ext4's 5% root reserve so the
 on-screen numbers add up the way viewers expect.
 
-Point at the `df` pane — it just went from "No such file or directory" to 64M, 100%
+Point at the `df` pane — it just went from "No such file or directory" to 128M, 100%
 free. You didn't run anything to show that.
 
 The writer, standing in for any long-lived service that logs to a file:
@@ -163,7 +163,7 @@ you're pointing at fd 9. Bash's built-in time format needs no subprocess, so the
 shows five stable descriptors and nothing else. Bash 4.2+.
 
 Removing the fork also makes the loop much faster — retime the fill after switching.
-`sleep 0.02` is a starting point; adjust until 64M takes 12–15 seconds.
+`sleep 0.02` is a starting point; adjust until 128M takes 25–30 seconds.
 
 **[gotcha] Shebang at byte 0.** If anything precedes `#!` — even a comment naming the
 file — the kernel's script handler doesn't find `0x23 0x21`, refuses the exec, and
@@ -683,7 +683,7 @@ rm -f /etc/logrotate.d/demo-app /usr/local/sbin/demo-hoarder.sh
 - [ ] `StartLimitIntervalSec=0` in `[Unit]`
 - [ ] `notifempty` absent from the logrotate config
 - [ ] `printf '%(...)T'` in the writer — no `pipe:` fd flickering in the pane
-- [ ] Fill rate retimed after the `printf` change — 64M in 12–15s
+- [ ] Fill rate retimed after the `printf` change — 128M in 25–30s
 - [ ] Full rehearsal: both rotations produce `(deleted)` on fd 9
 - [ ] `teardown.sh` tested end to end
 
