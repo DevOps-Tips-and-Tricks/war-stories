@@ -5,7 +5,7 @@ MOUNT=/var/log/demo-app
 IMG=/root/demo-disk.img
 
 mkdir -p "$MOUNT"
-fallocate -l 64M "$IMG"
+fallocate -l 128M "$IMG"
 mkfs.ext4 -q -m 0 "$IMG"
 mount -o loop "$IMG" "$MOUNT"
 
