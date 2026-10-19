@@ -17,4 +17,12 @@ systemctl daemon-reload
 install -m 0644 -o root -g root logrotate-demo-app /etc/logrotate.d/demo-app
 grep -q notifempty /etc/logrotate.d/demo-app && { echo "FATAL: remove notifempty"; exit 1; }
 
+# Say which rule is live. Re-running this script puts the broken one back,
+# which is easy to miss after installing logrotate-demo-app.fixed by hand.
+if grep -q copytruncate /etc/logrotate.d/demo-app; then
+  echo "logrotate: copytruncate (the fix) — writer keeps writing to access.log"
+else
+  echo "logrotate: create (the bug) — after rotation the writer follows its inode to access.log.1"
+fi
+
 echo "Installed. On camera: sudo systemctl start demo-hoarder"

@@ -53,9 +53,9 @@ logrotate config that looks entirely reasonable. Root required; nothing touches
 the real root filesystem.
 
 ```bash
-# 1. a 64M filesystem so the fill is watchable
+# 1. a 128M filesystem so the fill is watchable
 mkdir -p /var/log/demo-app
-fallocate -l 64M /root/demo-disk.img
+fallocate -l 128M /root/demo-disk.img
 mkfs.ext4 -q -m 0 /root/demo-disk.img
 mount -o loop /root/demo-disk.img /var/log/demo-app
 findmnt /var/log/demo-app >/dev/null || { echo "FATAL: not a separate mount"; exit 1; }
