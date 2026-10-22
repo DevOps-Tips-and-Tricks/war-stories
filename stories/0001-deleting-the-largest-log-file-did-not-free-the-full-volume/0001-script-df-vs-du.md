@@ -463,8 +463,10 @@ closes the loop.
 
 ## Act 3 — Production (9:00–15:00)
 
-> Straight to camera: *"That's the toy version. Here's what this looked like on a
-> cluster I run, where it took one member of a database replica set down."*
+> Straight to camera, word for word from `0001-spoken-lines.md` §8: *"Okay, so that's
+> the toy version. Now let's go back to that node from the start. Oh, and I'm Milad,
+> by the way. Running Kubernetes clusters is my day job, and this was one of mine.
+> Here's how it took one member of a database replica set down."*
 
 **Collapse to a single pane here** — `Ctrl-b z` zooms the driver pane, press again to
 restore. The split screen is a teaching instrument for a controlled lab. Act 3 is a war
