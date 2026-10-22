@@ -149,10 +149,11 @@ Then the judgment call:
 
 ## 8. The bridge into Act 3
 
-> That is the toy version.
-> Oh, and I'm Milad, by the way. Running Kubernetes clusters is my day job.
-> So here is what this looked like on a cluster I run, where it took one member of a
-> database replica set down.
+> Okay, so that's the toy version.
+> Now let's go back to that node from the start.
+> Oh, and I'm Milad, by the way. Running Kubernetes clusters is my day job, and this
+> was one of mine.
+> Here's how it took one member of a database replica set down.
 
 This is the first time you say your name. Not earlier: before this point the viewer
 has no reason to care who you are. Here they are about to hear a production story, and
