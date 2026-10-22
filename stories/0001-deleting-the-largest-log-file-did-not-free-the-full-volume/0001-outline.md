@@ -91,7 +91,7 @@ for the channel more than any explanation will.
 | 8:10 | **Beat 4** — truncate. Then: *what did not change.* → **Move 2** | tmux | run first, talk second |
 | 9:10 | **Beat 5** — sparse-file wrinkle (`stat`: size vs blocks) | tmux | only genuinely optional segment |
 | 9:50 | **Beat 6** — the real fix: copytruncate vs postrotate. Prove it on the same panes. → **Move 3** | editor + tmux | — |
-| 10:50 | **Bridge back.** *"So. Back to that node."* Then the name, one sentence: *"I'm Milad. I build and run Kubernetes platforms for a living."* | to camera | first mention of your name. `0001-spoken-lines.md` §8. No employer |
+| 10:50 | **Bridge back.** *"So. Back to that node."* Then the name, in passing: *"Oh, and I'm Milad, by the way. Running Kubernetes clusters is my day job."* | to camera | first mention of your name. `0001-spoken-lines.md` §8. No employer |
 | 11:05 | **Act 3b — the resolution.** Stop the bleeding (15Gi → 22Gi, restart), the two candidates for the `rm`, why you'll never know, why it filled, what you'd run before the restart. | to camera + terminal | script §3.1. The payoff is the honesty, not a reveal |
 | 13:20 | **Why Kubernetes is worse.** PID namespace, nodefs, eviction cascade. | node terminal | — |
 | 14:40 | **What to actually monitor.** Rate of change, inodes, the exporter. | code + PromQL | — |
@@ -127,9 +127,10 @@ demonstrated in the cold open rather than labelled. Captioning it would make it 
 > Two: when you fix something surgically, check what didn't change.
 > Three: a workaround is not a fix — know which one you just did.
 >
-> That is what this channel is. Real incidents, the wrong guesses included, and one
-> habit you can take to your own stack. If you have a war story where the first guess
-> was wrong, send it to me. The repo is in the description."
+> And that's pretty much what this channel is about. Real incidents, the wrong guesses
+> too, and something you can take back to your own systems. If you've got a story like
+> this — where your first guess was wrong — I'd love to hear it. The link is in the
+> description."
 
 The war-story ask is the only call to action. No "like and subscribe".
 
