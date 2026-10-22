@@ -6,7 +6,7 @@ MOUNT=/var/log/demo-app
 UNIT=demo-hoarder
 
 tmux kill-session -t "$S" 2>/dev/null || true
-tmux new-session -d -s "$S" -x 240 -y 60
+tmux new-session -d -s "$S" -x 10 -y 60
 
 # tmux >= 3.1 takes -l 60%; older takes -p 60. Check `tmux -V` first.
 tmux split-window -h -l 60% -t "$S":0.0     # 0 driver | 1 right column
