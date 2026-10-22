@@ -21,7 +21,7 @@ read and made it ambiguous which tool was reporting what.
 ┌──────────────────────────┬─────────────────────────────────┐
 │                          │  directory contents             │
 │                          ├─────────────────────────────────┤
-│  DRIVER                  │  open file descriptors          │
+│  DRIVER                  │  what the process has open      │
 │  (where I type)          ├─────────────────────────────────┤
 │                          │  df — the filesystem's answer   │
 │                          ├─────────────────────────────────┤
@@ -50,7 +50,7 @@ tmux set -t "$S" pane-border-status top
 tmux set -t "$S" pane-border-format ' #{pane_title} '
 tmux select-pane -t "$S":0.0 -T 'driver'
 tmux select-pane -t "$S":0.1 -T 'directory contents'
-tmux select-pane -t "$S":0.2 -T 'open file descriptors'
+tmux select-pane -t "$S":0.2 -T 'what the process has open'
 tmux select-pane -t "$S":0.3 -T 'df — filesystem'
 tmux select-pane -t "$S":0.4 -T 'du — directory tree'
 
@@ -149,11 +149,13 @@ while true; do
 done
 ```
 
-> **Say this out loud:** `exec 9>>` opens the file one time and keeps the descriptor
-> for the life of the process. That is what every real daemon does. If you wrote
-> `printf ... >> "$LOG"` inside the loop, the shell would reopen the path every
-> iteration and this entire class of bug would be invisible. The bug lives in the
-> long-lived descriptor.
+> **Say this out loud:** `exec 9>>` opens the file one time and keeps it open for as
+> long as the process runs. That is what most real services do. Remember this line.
+
+Plant it and stop. Why it matters is the Beat 2 payoff: if you wrote
+`printf ... >> "$LOG"` inside the loop, the shell would reopen the path every
+iteration and this entire class of bug would be invisible. Saying that here, or using
+the word "descriptor", gives the answer away before the panes diverge.
 
 **[gotcha] `printf '%(...)T'` instead of `$(date -Is)`.** Command substitution is
 implemented with a pipe: bash forks, the child writes to it, the parent reads. So
@@ -274,8 +276,9 @@ once, while the numbers keep moving:
 >
 > The kernel frees an inode when two things are both true: the link count hits zero
 > **and** the last open descriptor closes. `unlink` did the first. The process is
-> still holding the second. So the data is unreachable and undeletable at the same
-> time.
+> still holding the second. That's the `exec 9>>` line I asked you to remember — it
+> opened the file once. If it reopened the path on every write, none of this would
+> happen. So the data is unreachable and undeletable at the same time.
 
 Switch to `0001-deleted-but-open-simulator.html` for this explanation. It replaces the
 inode primer video, so this is the first time the viewer sees *directory entry → inode →
