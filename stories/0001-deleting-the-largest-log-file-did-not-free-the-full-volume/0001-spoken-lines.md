@@ -22,15 +22,16 @@ Do not add anything before this. No greeting, no channel intro.
 
 ---
 
-## 2. Act 1 — why the descriptor matters
+## 2. Act 1 — plant the open-once line
 
 Say this while the writer script is on screen:
 
-> This line opens the file one time and keeps the descriptor for the life of the
-> process. That is what every real daemon does.
->
-> If I reopened the path on every write, this entire class of bug would be invisible.
-> The bug lives in the long-lived descriptor.
+> This line opens the file one time, and keeps it open for as long as the process
+> runs. That is what most real services do.
+> Remember this line.
+
+Say nothing about why it matters. That is the payoff in Beat 2 — explaining it here
+gives the answer away before the panes diverge.
 
 ---
 
@@ -72,6 +73,9 @@ episode. Say it over the simulator, not over a frozen terminal.
 > is zero, and no process has the file open.
 >
 > unlink did the first one. The process is still holding the second one.
+>
+> That is the line I asked you to remember. It opened the file one time.
+> If it reopened the path on every write, none of this would happen.
 >
 > So right now, this data is unreachable and undeletable at the same time.
 >
@@ -145,8 +149,30 @@ Then the judgment call:
 
 ## 8. The bridge into Act 3
 
-> That is the toy version. Here is what this looked like on a cluster I run, where it
-> took one member of a database replica set down.
+> That is the toy version.
+> I'm Milad. I build and run Kubernetes platforms for a living.
+> Here is what this looked like on a cluster I run, where it took one member of a
+> database replica set down.
+
+This is the first time you say your name. Not earlier: before this point the viewer
+has no reason to care who you are. Here they are about to hear a production story, and
+the name is what makes it yours. Never add an employer or a client — it would
+de-anonymise the incident.
+
+---
+
+## 9. The close — after the three moves
+
+Say the three moves from the outline first. Then:
+
+> That is what this channel is.
+> Real incidents, the wrong guesses included, and one habit you can take to your own
+> stack.
+> If you have a war story where the first guess was wrong, send it to me.
+> The repo is in the description.
+
+Then name the next episode and stop. No "like and subscribe" — the ask for a war story
+is the call to action.
 
 ---
 
