@@ -91,7 +91,7 @@ for the channel more than any explanation will.
 | 8:10 | **Beat 4** — truncate. Then: *what did not change.* → **Move 2** | tmux | run first, talk second |
 | 9:10 | **Beat 5** — sparse-file wrinkle (`stat`: size vs blocks) | tmux | only genuinely optional segment |
 | 9:50 | **Beat 6** — the real fix: copytruncate vs postrotate. Prove it on the same panes. → **Move 3** | editor + tmux | — |
-| 10:50 | **Bridge back.** *"So. Back to that node."* Then the name, in passing: *"Oh, and I'm Milad, by the way. Running Kubernetes clusters is my day job."* | to camera | first mention of your name. `0001-spoken-lines.md` §8. No employer |
+| 10:50 | **Bridge back.** *"Okay, so that's the toy version. Now let's go back to that node from the start."* Then the name, in passing: *"Oh, and I'm Milad, by the way. Running Kubernetes clusters is my day job, and this was one of mine."* | to camera | first mention of your name. `0001-spoken-lines.md` §8. No employer |
 | 11:05 | **Act 3b — the resolution.** Stop the bleeding (15Gi → 22Gi, restart), the two candidates for the `rm`, why you'll never know, why it filled, what you'd run before the restart. | to camera + terminal | script §3.1. The payoff is the honesty, not a reveal |
 | 13:20 | **Why Kubernetes is worse.** PID namespace, nodefs, eviction cascade. | node terminal | — |
 | 14:40 | **What to actually monitor.** Rate of change, inodes, the exporter. | code + PromQL | — |
