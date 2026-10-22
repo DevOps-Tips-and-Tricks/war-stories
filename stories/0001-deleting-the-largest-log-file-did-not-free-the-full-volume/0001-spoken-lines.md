@@ -150,8 +150,8 @@ Then the judgment call:
 ## 8. The bridge into Act 3
 
 > That is the toy version.
-> I'm Milad. I build and run Kubernetes platforms for a living.
-> Here is what this looked like on a cluster I run, where it took one member of a
+> Oh, and I'm Milad, by the way. Running Kubernetes clusters is my day job.
+> So here is what this looked like on a cluster I run, where it took one member of a
 > database replica set down.
 
 This is the first time you say your name. Not earlier: before this point the viewer
@@ -165,11 +165,11 @@ de-anonymise the incident.
 
 Say the three moves from the outline first. Then:
 
-> That is what this channel is.
-> Real incidents, the wrong guesses included, and one habit you can take to your own
-> stack.
-> If you have a war story where the first guess was wrong, send it to me.
-> The repo is in the description.
+> And that's pretty much what this channel is about.
+> Real incidents, the wrong guesses too, and something you can take back to your own
+> systems.
+> If you've got a story like this — where your first guess was wrong — I'd love to
+> hear it. The link is in the description.
 
 Then name the next episode and stop. No "like and subscribe" — the ask for a war story
 is the call to action.
