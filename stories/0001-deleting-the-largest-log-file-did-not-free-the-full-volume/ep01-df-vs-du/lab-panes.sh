@@ -18,7 +18,7 @@ tmux set -t "$S" pane-border-status top
 tmux set -t "$S" pane-border-format ' #{pane_title} '
 tmux select-pane -t "$S":0.0 -T 'driver'
 tmux select-pane -t "$S":0.1 -T 'directory contents'
-tmux select-pane -t "$S":0.2 -T 'open file descriptors'
+tmux select-pane -t "$S":0.2 -T 'what the process has open'
 tmux select-pane -t "$S":0.3 -T 'df — filesystem'
 tmux select-pane -t "$S":0.4 -T 'du — directory tree'
 
