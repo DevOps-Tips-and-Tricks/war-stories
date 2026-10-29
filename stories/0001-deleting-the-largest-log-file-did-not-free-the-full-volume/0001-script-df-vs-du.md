@@ -543,7 +543,7 @@ screen.
 A sidecar's second copy sits on the data volume and doubles the bill.
 
 **Ceph-backed PVCs add a second floor** — *not part of this incident (the volumes were
-OpenEBS LVM local PVs), so 20 seconds as "worth knowing" at most.* Freeing space inside the filesystem
+local PVs), so 20 seconds as "worth knowing" at most.* Freeing space inside the filesystem
 doesn't return blocks to the pool. RBD images don't shrink, and unless discard is
 plumbed through (`discard` mount option, or periodic `fstrim`) the pool still counts
 them. Node level looks fixed; cluster level isn't. Same shape as `df` vs `du`, one

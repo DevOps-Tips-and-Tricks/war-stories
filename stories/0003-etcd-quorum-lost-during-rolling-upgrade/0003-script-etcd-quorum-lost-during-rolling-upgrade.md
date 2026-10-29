@@ -1,13 +1,13 @@
 # Video production script — Episode 0003
 
-**Source entry:** `stories/0003-etcd-quorum-lost-during-rolling-upgrade.md`
+**Source entry:** `0003-etcd-quorum-lost-during-rolling-upgrade.md`
 **Channel:** https://www.youtube.com/@DevOpsTipsAndTricks
 **Status:** draft — not recorded
 **Target runtime:** 12:00–13:00
 **Format:** terminal screencast primary, talking head for the three lesson beats
 
-> This file is local-only. `video-scripts/` is gitignored — nothing here ships
-> to the public repository.
+> This file is public — it ships with the entry. Keep anything not yet anonymised
+> in the gitignored `video-scripts/` folder, not here.
 
 ---
 
