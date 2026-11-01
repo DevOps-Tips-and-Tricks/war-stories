@@ -14,3 +14,7 @@ venv/
 
 # Local video production notes and demo labs — never published
 video-scripts/
+
+# Secrets (ElevenLabs API key etc.) — never commit
+.env
+.env.*
