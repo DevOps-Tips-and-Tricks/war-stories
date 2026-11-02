@@ -1,11 +1,16 @@
 # YouTube Short — Episode 01: df vs du
 
 **Source entry:** `0001-deleting-the-largest-log-file-did-not-free-the-full-volume.md`
-**Length:** 70 s as rendered (calm delivery runs longer than the 56 s word-count estimate), vertical 1080×1920
+**Length:** 72.6 s as rendered (68.4 s of narration plus a 3.5 s channel end card), vertical 1080×1920
 **Voice:** an ElevenLabs instant clone of the maintainer's own voice (`eleven_v4`, stability 0.95,
 similarity 0.95, light-Persian-accent delivery tag), generated per beat. Video and captions are
 built to the generated audio's timestamps. Tick YouTube's "altered or synthetic content" box when
 posting.
+**Look:** the episode's design system, taken from `0001-deleted-but-open-simulator.html`
+(ground `#0A111D`, panel `#111A2A`, ink `#F5EEE2`, accent `#EC9A46`, danger `#E95460`,
+ok `#5BC98B`; JetBrains Mono plus the system sans). Calm motion: fades, rises, gauges and
+highlights. No stamps, shake or whooshes; the only sound effect is soft typing under the
+terminal.
 
 The Short must not claim more than the entry does. The entry leaves open *why*
 the `rm` freed nothing (a held descriptor, or fluent-bit's duplicate copy), so
@@ -67,14 +72,23 @@ About 140 words, so roughly 56 s at a calm pace.
 
 ## Visuals (built by Claude to the audio)
 
+Terminal output is a **reconstruction at the incident's scale**, not a capture: a 15G volume
+at 100% and an 11G `mongod.log`, so that "one huge log file" matches the screen. It is
+modelled on a real lab run of the same commands (488M volume, 477M log). The terminal title
+says "reconstruction, names redacted", and the WiredTiger data-file names in the `du`
+listing are blurred as if confidential. The 15G figure is the one the entry already
+publishes; nothing else in the listing comes from the incident.
+
 | Beat | On screen |
 |---|---|
-| 1 | Big `100%` disk bar. A file icon is deleted; the bar does not move |
-| 2 | Terminal: `df -h` → `100%`, `du -h -d 1` → one large `mongod.log`, `rm`, `df -h` → `100%` again |
-| 3 | Diagram: name → inode → blocks. `rm` cuts the name link; a process's fd arrow still holds the inode. `du` reads names, `df` reads blocks |
-| 4 | A large `?` over the diagram, then a pod restart icon wipes it clean |
-| 5 | Terminal: `lsof +L1`, one row ending in `(deleted)`, highlighted. Then three container boxes on one shared disk, each with its own process list |
-| 6 | The two lines as text cards, then the channel name |
+| 1 | Card `/data/db/logs` with `mongod.log 11G`, struck out on "deleted". A large `df` reading of `100%` stays put; chip "after rm · unchanged" |
+| 2 | Pod `database-0` with a `CrashLoopBackOff` chip. Terminal: `df -h` at 100%, `du -ah /data/db \| sort -rh \| head -8` with the 11G `mongod.log` highlighted and the data files blurred, `rm`, `df -h` at 100% again |
+| 3 | The simulator's model, animated: directory entry → inode 13 ← process fd 9w. `nlink` drops to 0, open fds stays at 1, "blocks kept". `du`/`df` gauges: `du` falls from 15G to 4.0G, `df` stays at 15G, the call chip flips from AGREE to SPLIT |
+| 4 | "Why did rm free nothing?" with the entry's two open explanations and what each would show (fluent-bit's full copy: `df` full, `du` full; a process holding the file: `df` full, `du` empty). The pod restart closes every container's descriptors and both turn to "evidence gone" |
+| 5 | Terminal: `lsof +L1`, with `NLINK 0` and `(deleted)` in red and `9w` in orange; chips "name deleted" and "still open for writing". Then the pod's three containers (`mongod`, `logs`/fluent-bit, `logrotate`), each with its own PID 1, on one shared `/data/db`; chip "shared disk · separate PID namespaces" |
+| 6 | The two lesson lines as cards, highlighted word by word as they are spoken. Then the channel end card in the style of the long-form intro's closing frame: logo, `DEVOPS` decoding from scrambled glyphs, `TIPS AND TRICKS`, "what broke at 2am — and why", and LIKE / COMMENT / SUBSCRIBE |
 
-Word-by-word captions are burned in throughout. Commands in captions use the
-spelling on screen, not the pronunciation.
+Captions are burned in for beats 1–5 in a reserved band above the Shorts UI, with nothing
+else drawn there. Up to four words show at a time: upcoming words dim, the current word in
+the accent colour. Commands use the on-screen spelling, not the pronunciation. Beat 6 has
+no separate captions, because the lesson cards are the words.
