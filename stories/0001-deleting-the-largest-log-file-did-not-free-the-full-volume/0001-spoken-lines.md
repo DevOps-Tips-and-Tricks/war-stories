@@ -83,6 +83,34 @@ episode. Say it over the simulator, not over a frozen terminal.
 
 Breathe at every paragraph break. Those are the edit points if you need them.
 
+### The pause: Move 1, to camera
+
+The scene freezes after "unreachable and undeletable at the same time" and before "And
+there it is". The camera panel slides in beside the frozen frame. On screen, `du` reads
+almost nothing, `df` reads 99%, and the Move is in text beside you. About 20 seconds:
+
+> Let me stop here for a second.
+>
+> Look at the two numbers. du says this directory is almost empty. df says the disk is
+> almost full.
+>
+> Neither of them is broken.
+>
+> When two tools disagree, they are answering different questions.
+>
+> du asks: which names can I find? df asks: which blocks are in use?
+>
+> You will meet this again. In memory graphs. In latency numbers.
+>
+> So don't ask which tool is lying. Ask what each one measures.
+>
+> Now watch df.
+
+Say it to the lens, with a half-second pause between lines. "Now watch df" hands back to
+the scene, and the next line is "And there it is". Keep the "Neither of them is broken"
+line and the "different questions" line close to the words on screen, so the viewer
+hears what they are reading.
+
 ---
 
 ## 5. Beat 3 — finding it
