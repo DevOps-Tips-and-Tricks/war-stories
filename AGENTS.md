@@ -1,6 +1,17 @@
-# CLAUDE.md
+# AGENTS.md
 
-Guidance for Claude Code when working in this repository.
+Guidance for Codex when working in this repository.
+
+## Project context
+
+- Use `$asd-ste100` when the user asks for Simplified Technical English.
+- Read [the ElevenLabs voiceover notes](docs/ELEVENLABS_VOICEOVER.md) before
+  generating or editing cloned narration. Keep production assets in the ignored
+  `video-scripts/` directory and credentials in the ignored repo-root `.env`.
+- If the maintainer reopens the Cloudflare Workers idea, start with the
+  [deferred hosting decision](docs/PROJECT_NOTES.md).
+- For Mac operations, keep each runnable Mac script and its saved output
+  together in the task scratchpad. Link both in the handoff.
 
 ## What this repository is
 

@@ -61,6 +61,6 @@ Structure the description in this order, each as its own short section:
 4. **Notes** — anything a reviewer must know that does not fit the above
    (a draft entry with placeholder sections, a rename, a follow-up needed).
 
-Do not use this style for the repository's editorial prose (`CLAUDE.md`
+Do not use this style for the repository's editorial prose (`AGENTS.md`
 voice rules, story bodies) unless the user asks for that too — those follow
-their own house style, documented in `CLAUDE.md` under "Voice."
+their own house style, documented in `AGENTS.md` under "Voice."
