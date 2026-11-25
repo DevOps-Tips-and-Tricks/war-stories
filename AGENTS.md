@@ -4,6 +4,8 @@ Guidance for Codex when working in this repository.
 
 ## Project context
 
+- Use ElevenLabs only for voiceover. Create, edit, composite and render
+  video locally with `ffmpeg` or other local tools.
 - Use `$asd-ste100` when the user asks for Simplified Technical English.
 - Read [the ElevenLabs voiceover notes](docs/ELEVENLABS_VOICEOVER.md) before
   generating or editing cloned narration. Keep production assets in the ignored
